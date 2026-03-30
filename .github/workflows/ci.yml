@@ -1,0 +1,49 @@
+name: Velox CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64
+          working-directory: backend
+
+  test:
+    name: Test Execution Engine (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [C, CPP, Java, Node, Python, TS]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+
+      - name: Install TypeScript (Only for TS)
+        if: matrix.language == 'TS'
+        run: sudo npm install -g typescript
+
+      - name: Run Backend End-to-End Tests for ${{ matrix.language }}
+        working-directory: backend
+        run: |
+          go mod tidy
+          go test -v -race ./processSubmission -run TestProcessSubmission_${{ matrix.language }}$

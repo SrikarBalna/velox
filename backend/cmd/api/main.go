@@ -50,7 +50,9 @@ func submitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Respond immediately with ID
-	fmt.Fprintf(w, `{"submission_id": "%s"}`, req.SubmissionID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	_, _ = fmt.Fprintf(w, `{"submission_id": "%s"}`, req.SubmissionID)
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,10 +68,11 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !found {
 		// Still processing or not found
-		fmt.Fprintf(w, `{"status": "pending"}`)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"status": "pending"}`)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(raw))
+	_, _ = w.Write([]byte(raw))
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os/exec"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -36,8 +37,12 @@ func RunBatch(execCmd string, execArgs []string, testCases []judge.TestCase, tim
 		if cmd.ProcessState != nil {
 			timeMs = (cmd.ProcessState.UserTime() + cmd.ProcessState.SystemTime()).Milliseconds()
 			if rusage, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage); ok {
-				// On Linux, Maxrss is reported in Kilobytes
-				memoryKb = int64(rusage.Maxrss)
+				// On Linux, Maxrss is reported in Kilobytes. On macOS, it is reported in Bytes!
+				if runtime.GOOS == "darwin" {
+					memoryKb = int64(rusage.Maxrss) / 1024
+				} else {
+					memoryKb = int64(rusage.Maxrss)
+				}
 			}
 		}
 

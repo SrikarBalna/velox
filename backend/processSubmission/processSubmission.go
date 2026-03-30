@@ -46,7 +46,7 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 		filesToClean = append(filesToClean, dirPath) // Clean up the entire submission directory
 
 	case "python":
-		scriptPath := fmt.Sprintf("/dev/shm/solution_%s.py", req.SubmissionID)
+		scriptPath := fmt.Sprintf("%s/solution_%s.py", getTempDir(), req.SubmissionID)
 		if err := os.WriteFile(scriptPath, []byte(req.SourceCode), 0644); err != nil {
 			return judge.SubmissionResponse{OverallState: "System Error: Cannot write to RAM"}
 		}
@@ -55,7 +55,7 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 		filesToClean = append(filesToClean, scriptPath)
 
 	case "node":
-		scriptPath := fmt.Sprintf("/dev/shm/solution_%s.js", req.SubmissionID)
+		scriptPath := fmt.Sprintf("%s/solution_%s.js", getTempDir(), req.SubmissionID)
 		if err := os.WriteFile(scriptPath, []byte(req.SourceCode), 0644); err != nil {
 			return judge.SubmissionResponse{OverallState: "System Error: Cannot write to RAM"}
 		}
@@ -88,10 +88,12 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 
 	results := runBatch.RunBatch(execCmd, execArgs, req.TestCases, timeLimit, memLimit)
 
-	// 3. CLEANUP: Delete files from /dev/shm RAM-disk
-	for _, file := range filesToClean {
-		os.RemoveAll(file)
-	}
+	// 3. CLEANUP: Delete files from RAM-disk or Temp disk
+	defer func() {
+		for _, file := range filesToClean {
+			_ = os.RemoveAll(file)
+		}
+	}()
 
 	// 4. AGGREGATE RESULTS
 	overallState := "Accepted"
@@ -110,12 +112,13 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 }
 
 func CompileInMemoryC(submissionID, sourceCode string) (string, error) {
-	// Use /tmp because /dev/shm is usually mounted as 'noexec' in Docker containers
-	sourcePath := fmt.Sprintf("/tmp/solution_%s.c", submissionID)
-	binaryPath := fmt.Sprintf("/tmp/solution_%s_c", submissionID)
-	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
+	sourcePath := fmt.Sprintf("%s/solution_%s.c", getTempDir(), submissionID)
+	binaryPath := fmt.Sprintf("%s/solution_%s", getTempDir(), submissionID)
+	if err := os.WriteFile(sourcePath, []byte(sourceCode), 0644); err != nil {
+		return "", fmt.Errorf("failed to write source: %v", err)
+	}
 
-	cmd := exec.Command("gcc", sourcePath, "-O2", "-o", binaryPath)
+	cmd := exec.Command("gcc", sourcePath, "-o", binaryPath, "-O2", "-Wall", "-lm")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("compile error: %v, %s", err, string(out))
 	}
@@ -123,11 +126,13 @@ func CompileInMemoryC(submissionID, sourceCode string) (string, error) {
 }
 
 func CompileInMemoryCPP(submissionID, sourceCode string) (string, error) {
-	sourcePath := fmt.Sprintf("/tmp/solution_%s.cpp", submissionID)
-	binaryPath := fmt.Sprintf("/tmp/solution_%s_cpp", submissionID)
-	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
+	sourcePath := fmt.Sprintf("%s/solution_%s.cpp", getTempDir(), submissionID)
+	binaryPath := fmt.Sprintf("%s/solution_%s_cpp", getTempDir(), submissionID)
+	if err := os.WriteFile(sourcePath, []byte(sourceCode), 0644); err != nil {
+		return "", fmt.Errorf("failed to write source: %v", err)
+	}
 
-	cmd := exec.Command("g++", sourcePath, "-O2", "-o", binaryPath)
+	cmd := exec.Command("g++", sourcePath, "-o", binaryPath, "-O2", "-Wall")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("compile error: %v, %s", err, string(out))
 	}
@@ -135,11 +140,14 @@ func CompileInMemoryCPP(submissionID, sourceCode string) (string, error) {
 }
 
 func CompileInMemoryJava(submissionID, sourceCode string) (string, string, error) {
-	// Java requires the file name to match the public class name. We assume "Main".
-	dirPath := fmt.Sprintf("/dev/shm/sol_%s", submissionID)
-	os.MkdirAll(dirPath, 0755)
+	dirPath := fmt.Sprintf("%s/sol_%s", getTempDir(), submissionID)
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return "", "", fmt.Errorf("failed to create dir: %v", err)
+	}
 	sourcePath := fmt.Sprintf("%s/Main.java", dirPath)
-	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
+	if err := os.WriteFile(sourcePath, []byte(sourceCode), 0644); err != nil {
+		return "", "", fmt.Errorf("failed to write source: %v", err)
+	}
 
 	cmd := exec.Command("javac", sourcePath)
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -149,14 +157,23 @@ func CompileInMemoryJava(submissionID, sourceCode string) (string, string, error
 }
 
 func CompileInMemoryTS(submissionID, sourceCode string) (string, string, error) {
-	sourcePath := fmt.Sprintf("/dev/shm/solution_%s.ts", submissionID)
-	jsPath := fmt.Sprintf("/dev/shm/solution_%s.js", submissionID)
-	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
+	sourcePath := fmt.Sprintf("%s/solution_%s.ts", getTempDir(), submissionID)
+	jsPath := fmt.Sprintf("%s/solution_%s.js", getTempDir(), submissionID)
+	if err := os.WriteFile(sourcePath, []byte(sourceCode), 0644); err != nil {
+		return "", "", fmt.Errorf("failed to write source: %v", err)
+	}
 
-	cmd := exec.Command("npx", "tsc", sourcePath)
+	// --skipLibCheck prevents compilation from crashing due to random @types installed globally or in parent folders
+	cmd := exec.Command("npx", "tsc", sourcePath, "--target", "ES2022", "--module", "commonjs", "--esModuleInterop", "--skipLibCheck")
 	if out, err := cmd.CombinedOutput(); err != nil {
-		// Output includes TS compile errors. It still might write a .js file, but we should fail the flow.
-		return "", "", fmt.Errorf("compile error: %v, %s", err, string(out))
+		return "", "", fmt.Errorf("compile error: exit status %v, %s", err, string(out))
 	}
 	return jsPath, sourcePath, nil
+}
+
+func getTempDir() string {
+	if _, err := os.Stat("/dev/shm"); err == nil {
+		return "/dev/shm"
+	}
+	return os.TempDir()
 }
