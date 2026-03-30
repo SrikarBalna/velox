@@ -38,12 +38,8 @@ jobs:
         with:
           go-version: '1.24.x'
 
-      - name: Install System Dependencies (Compilers / Runtimes)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc g++ default-jdk python3 nodejs npm
-
-      - name: Install TypeScript
+      - name: Install TypeScript (Only for TS)
+        if: matrix.language == 'TS'
         run: sudo npm install -g typescript
 
       - name: Run Backend End-to-End Tests for ${{ matrix.language }}
