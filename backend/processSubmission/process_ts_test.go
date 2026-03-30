@@ -8,7 +8,8 @@ func TestProcessSubmission_TS(t *testing.T) {
 	tests := []ExecutionTestCase{
 		{
 			Name: "TS_Accepted",
-			SourceCode: `import * as fs from 'fs';
+			SourceCode: `// @ts-ignore
+import * as fs from 'fs';
 const input: string[] = fs.readFileSync('/dev/stdin', 'utf-8').trim().split(/\s+/);
 if (input.length >= 2) {
     const a: number = parseInt(input[0]);
@@ -41,7 +42,8 @@ if (input.length >= 2) {
 	}
 
 	tests = append(tests, GenerateVariations("TS_Bulk_Accepted", 
-		`import * as fs from 'fs';
+		`// @ts-ignore
+import * as fs from 'fs';
 		const input: string[] = fs.readFileSync('/dev/stdin', 'utf-8').trim().split(/\s+/);
 		console.log(parseInt(input[0]) + parseInt(input[1]));`, 
 		"Accepted", 15)...)

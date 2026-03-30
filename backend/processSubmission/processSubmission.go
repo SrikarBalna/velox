@@ -159,20 +159,13 @@ func CompileInMemoryJava(submissionID, sourceCode string) (string, string, error
 func CompileInMemoryTS(submissionID, sourceCode string) (string, string, error) {
 	sourcePath := fmt.Sprintf("%s/solution_%s.ts", getTempDir(), submissionID)
 	jsPath := fmt.Sprintf("%s/solution_%s.js", getTempDir(), submissionID)
-	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
+	if err := os.WriteFile(sourcePath, []byte(sourceCode), 0644); err != nil {
+		return "", "", fmt.Errorf("failed to write source: %v", err)
+	}
 
 	// --skipLibCheck prevents compilation from crashing due to random @types installed globally or in parent folders
 	cmd := exec.Command("npx", "tsc", sourcePath, "--target", "ES2022", "--module", "commonjs", "--esModuleInterop", "--skipLibCheck")
-	out, err := cmd.CombinedOutput()
-	
-	if err != nil {
-		// Online Judges strictly want it to be typable. But on local development, 
-		// @types/node might not be installed in the exact directory.
-		// So we gracefully check if TSC at least emitted the Javascript file!
-		if _, statErr := os.Stat(jsPath); statErr == nil {
-			return jsPath, sourcePath, nil
-		}
-		// If JS didn't emit, then it's a true fatal compile error
+	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", "", fmt.Errorf("compile error: exit status %v, %s", err, string(out))
 	}
 	return jsPath, sourcePath, nil
