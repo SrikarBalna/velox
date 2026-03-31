@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [C, CPP, Java, Node, Python, TS]
+        language: [C, CPP, Java, Node, Python, TS, CSharp]
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +41,12 @@ jobs:
       - name: Install TypeScript (Only for TS)
         if: matrix.language == 'TS'
         run: sudo npm install -g typescript
+
+      - name: Set up .NET (Only for CSharp)
+        if: matrix.language == 'CSharp'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Run Backend End-to-End Tests for ${{ matrix.language }}
         working-directory: backend
