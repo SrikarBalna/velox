@@ -21,7 +21,7 @@ func getEnv(key, fallback string) string {
 }
 
 func Connect() {
-	addr := getEnv("REDIS_ADDR", "localhost:6379")
+	addr := getEnv("REDIS_ADDR", "localhost:6380")
 	password := getEnv("REDIS_PASSWORD", "123456")
 
 	Client = redis.NewClient(&redis.Options{

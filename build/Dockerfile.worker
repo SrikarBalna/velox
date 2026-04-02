@@ -22,7 +22,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu72 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && npm install -g esbuild
+    && npm install -g esbuild \
+    && npm install -g typescript \
+    && npm install -g @types/node
 
 COPY --from=dotnet-sdk /usr/share/dotnet /usr/share/dotnet
 RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
