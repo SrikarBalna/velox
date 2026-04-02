@@ -8,6 +8,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rishik92/velox/auth/db"
+	"github.com/rishik92/velox/auth/handler"
+	"github.com/rishik92/velox/auth/repository"
+	"github.com/rishik92/velox/auth/service"
 	"github.com/rishik92/velox/judge"
 	veloxRedis "github.com/rishik92/velox/shared/redis"
 )
@@ -15,8 +19,32 @@ import (
 func main() {
 	veloxRedis.Connect()
 
+	// Connect to DB
+	database, err := db.Connect()
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer database.Close()
+
+	if err := database.Ping(); err != nil {
+		log.Fatalf("failed to ping database: %v", err)
+	}
+	fmt.Println("Connected to PostgreSQL database successfully.")
+
+	// Set up Auth Module
+	repo := repository.NewUserRepository(database)
+	svc := service.NewAuthService(repo)
+	authHandler := handler.NewAuthHandler(svc)
+
+	// Auth Routes
+	http.HandleFunc("/auth/signup", authHandler.Signup)
+	http.HandleFunc("/auth/login", authHandler.Login)
+	http.HandleFunc("/auth/logout", authHandler.Logout)
+
+	// General API
 	http.HandleFunc("/submit", submitHandler)
 	http.HandleFunc("/status", statusHandler)
+	http.HandleFunc("/health", healthHandler)
 
 	fmt.Println("API Server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
