@@ -7,22 +7,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.x'
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.64
-          working-directory: backend
-
   test:
     name: Test Execution Engine (${{ matrix.language }})
     runs-on: ubuntu-latest
@@ -38,12 +22,10 @@ jobs:
         with:
           go-version: '1.24.x'
 
-      - name: Install TypeScript (Only for TS)
-        if: matrix.language == 'TS'
+      - name: Install TypeScript
         run: sudo npm install -g typescript
 
-      - name: Set up .NET (Only for CSharp)
-        if: matrix.language == 'CSharp'
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'

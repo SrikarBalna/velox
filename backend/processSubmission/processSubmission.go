@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/rishik92/velox/judge"
 	"github.com/rishik92/velox/runBatch"
@@ -60,7 +61,7 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 		execArgs = []string{"-cp", dirPath, className}
 
 	case "python":
-		scriptPath := fmt.Sprintf("/dev/shm/solution_%s.py", req.SubmissionID)
+		scriptPath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s.py", req.SubmissionID))
 		filesToClean = append(filesToClean, scriptPath)
 		if err := os.WriteFile(scriptPath, []byte(req.SourceCode), 0644); err != nil {
 			return judge.SubmissionResponse{OverallState: "System Error: Cannot write to RAM"}
@@ -69,7 +70,7 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 		execArgs = []string{scriptPath}
 
 	case "node":
-		scriptPath := fmt.Sprintf("/dev/shm/solution_%s.js", req.SubmissionID)
+		scriptPath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s.js", req.SubmissionID))
 		filesToClean = append(filesToClean, scriptPath)
 		if err := os.WriteFile(scriptPath, []byte(req.SourceCode), 0644); err != nil {
 			return judge.SubmissionResponse{OverallState: "System Error: Cannot write to RAM"}
@@ -119,8 +120,8 @@ func ProcessSubmission(req judge.SubmissionRequest) judge.SubmissionResponse {
 }
 
 func CompileInMemoryC(submissionID, sourceCode string) (string, string, error) {
-	sourcePath := fmt.Sprintf("/tmp/solution_%s.c", submissionID)
-	binaryPath := fmt.Sprintf("/tmp/solution_%s_c", submissionID)
+	sourcePath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s.c", submissionID))
+	binaryPath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s_c", submissionID))
 	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
 
 	cmd := exec.Command("gcc", sourcePath, "-O2", "-o", binaryPath)
@@ -131,8 +132,8 @@ func CompileInMemoryC(submissionID, sourceCode string) (string, string, error) {
 }
 
 func CompileInMemoryCPP(submissionID, sourceCode string) (string, string, error) {
-	sourcePath := fmt.Sprintf("/tmp/solution_%s.cpp", submissionID)
-	binaryPath := fmt.Sprintf("/tmp/solution_%s_cpp", submissionID)
+	sourcePath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s.cpp", submissionID))
+	binaryPath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s_cpp", submissionID))
 	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
 
 	cmd := exec.Command("g++", sourcePath, "-O2", "-o", binaryPath)
@@ -143,7 +144,7 @@ func CompileInMemoryCPP(submissionID, sourceCode string) (string, string, error)
 }
 
 func CompileInMemoryJava(submissionID, sourceCode string) (string, string, error) {
-	dirPath := fmt.Sprintf("/dev/shm/sol_%s", submissionID)
+	dirPath := filepath.Join(os.TempDir(), fmt.Sprintf("sol_%s", submissionID))
 	os.MkdirAll(dirPath, 0755)
 	sourcePath := fmt.Sprintf("%s/Main.java", dirPath)
 	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
@@ -156,12 +157,12 @@ func CompileInMemoryJava(submissionID, sourceCode string) (string, string, error
 }
 
 func CompileInMemoryTS(submissionID, sourceCode string) (string, string, error) {
-	sourcePath := fmt.Sprintf("/dev/shm/solution_%s.ts", submissionID)
-	jsPath := fmt.Sprintf("/dev/shm/solution_%s.js", submissionID)
+	sourcePath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s.ts", submissionID))
+	jsPath := filepath.Join(os.TempDir(), fmt.Sprintf("solution_%s.js", submissionID))
 	os.WriteFile(sourcePath, []byte(sourceCode), 0644)
 
-	// Use esbuild for fast TS to JS compilation without type checking
-	cmd := exec.Command("esbuild", sourcePath, "--bundle", "--platform=node", "--outfile="+jsPath)
+	// Use tsc for TS to JS compilation with type checking
+	cmd := exec.Command("npx", "tsc", sourcePath, "--skipLibCheck")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return jsPath, sourcePath, fmt.Errorf("compile error: %s", string(out))
 	}
@@ -169,7 +170,7 @@ func CompileInMemoryTS(submissionID, sourceCode string) (string, string, error) 
 }
 
 func CompileInMemoryCSharp(submissionID, sourceCode string) (string, string, error) {
-	dirPath := fmt.Sprintf("/tmp/sol_cs_%s", submissionID)
+	dirPath := filepath.Join(os.TempDir(), fmt.Sprintf("sol_cs_%s", submissionID))
 	os.MkdirAll(dirPath, 0755)
 
 	csprojContent := `<Project Sdk="Microsoft.NET.Sdk">
