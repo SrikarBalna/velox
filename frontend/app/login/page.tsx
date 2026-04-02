@@ -1,17 +1,52 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import api from '@/lib/api';
+import axios from 'axios';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (searchParams.get('signup') === 'success') {
+      setSignupSuccess(true);
+    }
+  }, [searchParams]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Dummy login redirect to the primary Code Execution Editor
-    router.push('/editor');
+    setLoading(true);
+    setError('');
+    setSignupSuccess(false);
+
+    try {
+      const response = await api.post('/auth/login', {
+        email,
+        password,
+      });
+
+      const { token } = response.data.data;
+      localStorage.setItem('velox_token', token);
+      
+      router.push('/editor');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.error || 'Login failed. Please check your credentials.');
+      } else {
+        setError('A connection error occurred. Please check your backend.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,6 +100,18 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {signupSuccess && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-500 text-sm">
+              Account created successfully! Please sign in.
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+              {error}
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium leading-6 text-white/90">
@@ -77,6 +124,8 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="block w-full rounded-xl border-0 bg-white/5 py-2.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 px-4 transition-all"
                   placeholder="admin@velox.dev"
                 />
@@ -101,14 +150,21 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-xl border-0 bg-white/5 py-2.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 px-4 transition-all"
                 />
               </div>
             </div>
 
             <div className="pt-2">
-              <Button type="submit" variant="primary" className="w-full justify-center text-sm h-11">
-                Sign in
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full justify-center text-sm h-11"
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </div>
           </form>

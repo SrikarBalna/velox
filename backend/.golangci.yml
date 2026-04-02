@@ -1,0 +1,24 @@
+linters-settings:
+  revive:
+    rules:
+      - name: package-comments
+        disabled: true
+      - name: exported
+        disabled: true
+      - name: package-name
+        disabled: true
+
+linters:
+  enable:
+    - gofmt
+    - govet
+    - errcheck
+    - ineffassign
+    - staticcheck
+  disable:
+    - stylecheck
+
+issues:
+  exclude-use-default: false
+  exclude:
+    - "ST1003" # Ignore mixed-case package names

@@ -1,17 +1,46 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import api from '@/lib/api';
+import axios from 'axios';
 
 export default function SignupPage() {
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Dummy signup redirect to the primary Code Execution Editor
-    router.push('/editor');
+    setLoading(true);
+    setError('');
+    
+    try {
+      await api.post('/auth/signup', {
+        email,
+        password,
+      });
+      
+      setSuccess(true);
+      // Optional: Automatically login and redirect, but for now we follow the plan to login manually
+      setTimeout(() => {
+        router.push('/login?signup=success');
+      }, 2000);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.error || 'Signup failed. Please try again.');
+      } else {
+        setError('A connection error occurred. Please check your backend.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,6 +94,18 @@ export default function SignupPage() {
             </div>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-500 text-sm">
+              Signup successful! Redirecting to login...
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSignup}>
             <div>
               <label htmlFor="name" className="block text-sm font-medium leading-6 text-white/90">
@@ -76,6 +117,8 @@ export default function SignupPage() {
                   name="name"
                   type="text"
                   required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="block w-full rounded-xl border-0 bg-white/5 py-2.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 px-4 transition-all"
                   placeholder="John Doe"
                 />
@@ -93,6 +136,8 @@ export default function SignupPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="block w-full rounded-xl border-0 bg-white/5 py-2.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 px-4 transition-all"
                   placeholder="admin@velox.dev"
                 />
@@ -109,14 +154,21 @@ export default function SignupPage() {
                   name="password"
                   type="password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-xl border-0 bg-white/5 py-2.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 px-4 transition-all"
                 />
               </div>
             </div>
 
             <div className="pt-2">
-              <Button type="submit" variant="primary" className="w-full justify-center text-sm h-11">
-                Get Started
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full justify-center text-sm h-11"
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : 'Get Started'}
               </Button>
             </div>
           </form>
