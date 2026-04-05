@@ -66,7 +66,7 @@ func runLanguageTests(t *testing.T, language string, tests []ExecutionTestCase) 
 				}
 			}
 
-			service := processSubmission.NewSubmissionService(&processSubmission.DefaultRunner{}, processSubmission.NewDefaultRegistry())
+			service := processSubmission.NewSubmissionService(&processSubmission.DefaultRunner{}, processSubmission.NewDefaultRegistry(), &processSubmission.LocalTempStorageAdapter{})
 			resp := service.ProcessSubmission(req)
 
 			if resp.OverallState != tc.ExpectedState {
