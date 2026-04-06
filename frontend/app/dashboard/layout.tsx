@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LogoutButton from '@/components/dashboard/LogoutButton';
 
 export default function DashboardLayout({
   children,
@@ -30,7 +31,7 @@ export default function DashboardLayout({
           
           <div className="w-px h-6 bg-white/10"></div>
           
-          <div className="flex items-center gap-3 cursor-pointer group">
+          <Link href="/dashboard/profile" className="flex items-center gap-3 cursor-pointer group">
             <div className="flex flex-col text-right hidden sm:flex">
                 <span className="text-sm font-bold text-white">Admin</span>
                 <span className="text-xs text-white/50">Pro Tier</span>
@@ -38,7 +39,8 @@ export default function DashboardLayout({
             <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-bold text-white group-hover:border-primary/50 transition-colors shadow-sm overflow-hidden relative">
               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Avatar" className="w-full h-full object-cover" />
             </div>
-          </div>
+          </Link>
+          <LogoutButton />
         </div>
       </header>
 

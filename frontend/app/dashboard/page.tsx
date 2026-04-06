@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import StatCard from '@/components/dashboard/StatCard';
 import { FocusProvider, useFocus } from '@/components/dashboard/FocusContext';
 import InteractiveStat from '@/components/dashboard/InteractiveStat';
@@ -138,7 +139,7 @@ function DashboardContent() {
                     <h4 className="text-xl font-bold text-white">Admin User</h4>
                     <p className="text-sm text-foreground/50 font-mono mt-1">admin@velox.dev</p>
                 </div>
-                <button className="mt-auto px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold text-white transition-colors cursor-pointer w-full">Edit Profile</button>
+                <Link href="/dashboard/profile" className="mt-auto px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold text-white transition-colors cursor-pointer w-full text-center block">Edit Profile</Link>
             </div>
 
             {/* Workspace Tier */}
