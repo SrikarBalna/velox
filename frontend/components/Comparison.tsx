@@ -1,4 +1,67 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+
+type Job = {
+  id: number;
+  startTime: number;
+};
+
 export default function Comparison() {
+  const [tradJobs, setTradJobs] = useState<Job[]>([]);
+  const [veloxJobs, setVeloxJobs] = useState<Job[]>([]);
+  const [globalTime, setGlobalTime] = useState(Date.now());
+  
+  useEffect(() => {
+    // Shared clock for real-time updates
+    const clockInterval = setInterval(() => {
+      setGlobalTime(Date.now());
+    }, 100);
+
+    // Initial state population
+    const now = Date.now();
+    setTradJobs([
+      { id: 89213, startTime: now + 200 },
+      { id: 89212, startTime: now + 100 },
+      { id: 89211, startTime: now }
+    ]);
+    
+    setVeloxJobs([{ id: 1, startTime: now }]);
+
+    // Job spawner: 1 job every 500ms
+    const spawner = setInterval(() => {
+      const currentTime = Date.now();
+      
+      setTradJobs(prev => {
+        const nextId = prev.length > 0 ? prev[0].id + 1 : 89211;
+        const newJob = { id: nextId, startTime: currentTime };
+        // Prepend to top, keep last 25 jobs
+        return [newJob, ...prev].slice(0, 25); 
+      });
+
+      setVeloxJobs(prev => {
+        const nextId = prev.length > 0 ? prev[0].id + 1 : 1;
+        const newJob = { id: nextId, startTime: currentTime };
+        return [newJob, ...prev].slice(0, 25); 
+      });
+
+    }, 500);
+
+    return () => {
+      clearInterval(clockInterval);
+      clearInterval(spawner);
+    };
+  }, []);
+
+  const formatVeloxId = (id: number) => id.toString().padStart(5, '0');
+
+  // Calculate estimated total traditional backlog time
+  const baseMinutes = 4;
+  const simulatedExtraSeconds = Math.floor((globalTime - (tradJobs[tradJobs.length - 1]?.startTime || globalTime)) / 200);
+  const totalSeconds = (baseMinutes * 60) + 12 + simulatedExtraSeconds;
+  const estMins = Math.floor(totalSeconds / 60);
+  const estSecs = (totalSeconds % 60).toString().padStart(2, '0');
+  
   return (
     <section className="bg-background py-24 relative overflow-hidden" id="compare">
       {/* Background divider glow */}
@@ -32,26 +95,33 @@ export default function Comparison() {
             
             <p className="mb-6 text-sm text-foreground/50">Your code is held up in massive, unscalable databases during contests.</p>
               
-            <div className="bg-black/40 rounded-xl p-6 border border-white/5 relative overflow-hidden">
+            <div 
+              className="bg-black/40 rounded-xl p-4 border border-white/5 relative overflow-hidden flex flex-col h-[260px]"
+            >
                <div className="absolute inset-0 bg-red-500/5 blur-xl pointer-events-none"></div>
               
-              <div className="flex justify-between text-xs mb-3 text-white/50 font-mono">
-                <span>Job #89211</span>
-                <span>Pending Array</span>
-              </div>
-              
-              {/* Slow loading bar */}
-              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden relative">
-                <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-600 to-red-400 animate-fill-slow w-full shadow-[0_0_10px_rgba(248,113,113,0.5)]"></div>
-              </div>
-              
-              <div className="mt-6 flex items-center justify-between">
-                <div className="flex items-center gap-3 opacity-60">
-                  <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
-                  <span className="text-sm font-mono text-red-200">Executing...</span>
-                </div>
-                <span className="text-xs font-mono text-red-300">Est: 4m 12s</span>
-              </div>
+               {tradJobs.map((job, idx) => {
+                 // For Traditional, jobs are stuck in queue. 
+                 const isExecuting = idx === tradJobs.length - 1; // Oldest job is executing
+                 // Real-time elapsed counter for the executing/pending job
+                 const elapsed = Math.max(0, (globalTime - job.startTime) / 1000).toFixed(1);
+                 
+                 return (
+                   <div key={job.id} className="animate-feed-in mb-3 flex flex-col gap-2 p-3 rounded-lg bg-white/[0.02] border border-white/5 relative z-10 shrink-0">
+                     <div className="flex justify-between text-xs text-white/50 font-mono">
+                       <span>Job #{job.id}</span>
+                       <span className="text-red-300/80">{isExecuting ? 'Executing...' : 'Pending Queue'}</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2 opacity-60">
+                         <div className="animate-spin h-3 w-3 border-2 border-red-400 border-t-transparent rounded-full"></div>
+                         <span className="text-xs font-mono text-red-200/50">Wait: {elapsed}s</span>
+                       </div>
+                       <span className="text-xs font-mono text-red-400/80">{isExecuting ? `Est: ${estMins}m ${estSecs}s` : 'Unknown'}</span>
+                     </div>
+                   </div>
+                 );
+               })}
             </div>
           </div>
 
@@ -70,33 +140,35 @@ export default function Comparison() {
             
             <p className="mb-6 text-sm text-foreground/80 leading-relaxed">Independent workers scale instantly to handle any traffic spike. Zero delays.</p>
               
-            <div className="bg-black/60 rounded-xl p-6 border border-white/10 relative overflow-hidden shadow-inner">
-              <div className="flex justify-between text-sm mb-3 text-white font-mono font-bold">
-                <span>Job #00001</span>
-                <span className="text-primary">Done</span>
-              </div>
-              
-              {/* Fast loading bar */}
-              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden relative border border-white/5">
-                <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-[#ff8c00] animate-fill-fast w-full shadow-[0_0_15px_rgba(255,90,0,0.8)] filter drop-shadow-lg"></div>
-              </div>
-              
-              <div className="mt-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 bg-success/20 rounded-full flex items-center justify-center border border-success/30 shadow-[0_0_10px_rgba(34,197,94,0.3)]">
-                    <svg className="w-3 h-3 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-mono text-success font-semibold tracking-wide">Accepted</span>
-                </div>
-                <span className="text-sm font-mono text-primary font-bold">12ms</span>
-              </div>
+            <div 
+              className="bg-black/60 rounded-xl p-4 border border-white/10 relative overflow-hidden shadow-inner flex flex-col h-[260px]"
+            >
+               {veloxJobs.map((job) => {
+                 return (
+                   <div key={job.id} className="animate-feed-in mb-3 flex flex-col gap-2 p-3 rounded-lg bg-white/[0.04] border border-white/10 shrink-0">
+                     <div className="flex justify-between text-xs text-white/80 font-mono">
+                       <span>Job #{formatVeloxId(job.id)}</span>
+                       <span className="text-success font-bold tracking-wide">Done</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <div className="h-4 w-4 bg-success/20 rounded-full flex items-center justify-center border border-success/30 shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                           <svg className="w-2.5 h-2.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                           </svg>
+                         </div>
+                         <span className="text-xs font-mono text-success/80">Accepted</span>
+                       </div>
+                       <span className="text-xs font-mono text-primary font-bold">12ms</span>
+                     </div>
+                   </div>
+                 );
+               })}
             </div>
           </div>
 
         </div>
       </div>
     </section>
-  )
+  );
 }

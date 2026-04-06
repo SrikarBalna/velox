@@ -2,16 +2,23 @@
 
 :root {
   /* Minimalist Brutalism Palette */
-  --background: #000000; /* Pure black */
-  --foreground: #ffffff; /* Pure white text */
-  
+  --background: #000000;
+  /* Pure black */
+  --foreground: #ffffff;
+  /* Pure white text */
+
   /* Single vibrant accent */
-  --velox-primary: #ff5a00; /* Hot Orange */
-  --velox-primary-hover: #e04e00; 
-  --velox-secondary: #facc15; /* Warning Yellow */
-  --velox-surface: #0a0a0a; /* Deepest grey for cards */
-  --velox-border: #333333; /* High contrast hard border */
-  --velox-success: #22c55e; /* Standard green */
+  --velox-primary: #ff5a00;
+  /* Hot Orange */
+  --velox-primary-hover: #e04e00;
+  --velox-secondary: #facc15;
+  /* Warning Yellow */
+  --velox-surface: #0a0a0a;
+  /* Deepest grey for cards */
+  --velox-border: #333333;
+  /* High contrast hard border */
+  --velox-success: #22c55e;
+  /* Standard green */
 }
 
 @theme inline {
@@ -39,9 +46,12 @@ body {
 /* Base utility for sleek SaaS card styling (glows, no hard shadows) */
 .dev-card {
   background-color: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.05); /* Extremely subtle border */
-  border-radius: 1rem; /* rounded-2xl */
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.8); /* Deep soft shadow */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  /* Extremely subtle border */
+  border-radius: 1rem;
+  /* rounded-2xl */
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.8);
+  /* Deep soft shadow */
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -51,29 +61,18 @@ body {
 .dev-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   z-index: 10;
 }
 
 .dev-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 90, 0, 0.3); /* Soft primary border on hover */
+  border-color: rgba(255, 90, 0, 0.3);
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 20px 0 rgba(255, 90, 0, 0.1);
-}
-
-@keyframes fill-bar {
-  0% { transform: scaleX(0); }
-  10% { transform: scaleX(0.1); }
-  40% { transform: scaleX(0.3); }
-  80% { transform: scaleX(0.7); }
-  100% { transform: scaleX(1); }
-}
-
-@keyframes smooth-fill-bar {
-  0% { transform: scaleX(0); }
-  100% { transform: scaleX(1); }
 }
 
 @keyframes ping-glow {
@@ -81,12 +80,31 @@ body {
   100% { transform: scale(2); opacity: 0; }
 }
 
-.animate-fill-slow {
-  transform-origin: left;
-  animation: fill-bar 3s ease-in-out infinite;
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fill-fast {
-  transform-origin: left;
-  animation: smooth-fill-bar 0.3s ease-out forwards infinite alternate;
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    /* For smooth push-down, we animate max-height */
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 100px; /* safely above card height */
+    /* the gap/margin is gap-2 between items, handled by parent flex gap, but we can set margin-bottom instead of gap */
+  }
+}
+
+.animate-feed-in {
+  animation: feed-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
 }
