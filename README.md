@@ -17,6 +17,24 @@ Core Go application logic.
 - **`processSubmission/`**: The language orchestrator. Handles compilation (for C, C#, C++, Java, TS) and script preparation (for Python, Node).
 - **`runBatch/`**: The execution engine. Runs binaries/scripts in a controlled environment, pipes input, and captures results, Time (ms), and Memory (KB).
 - **`shared/redis/`**: Basic Redis wrapper for pushing/popping submissions and results.
+- **`docs/`**: Automatically generated Swagger (OpenAPI 3.0) documentation.
+
+---
+
+## 📖 API Documentation
+
+The project uses Swagger (OpenAPI 3.0) for API documentation.
+
+### 🔍 View Documentation
+When the server is running in development mode (`GO_ENV=development`), you can access the interactive Swagger UI at:
+- **[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)**
+
+### 🛠 Generate Documentation
+If you add new endpoints or update annotations, regenerate the documentation using:
+```bash
+cd backend
+go run github.com/swaggo/swag/cmd/swag init -g cmd/api/main.go
+```
 
 ### `build/`
 

@@ -1,0 +1,427 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the Velox API server.",
+        "title": "Velox API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate a user and return a JWT token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User Login",
+                "parameters": [
+                    {
+                        "description": "Login Request",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.loginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "schema": {
+                            "$ref": "#/definitions/handler.successResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Invalidate the session (stateless JWT logout).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User Logout",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "schema": {
+                            "$ref": "#/definitions/handler.successResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "description": "Register a new user with name, email, and password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User Signup",
+                "parameters": [
+                    {
+                        "description": "Signup Request",
+                        "name": "signup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.signupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User created",
+                        "schema": {
+                            "$ref": "#/definitions/handler.successResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetch profile and activity data for the authenticated user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Get Dashboard Data",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Check if the API server is healthy.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Health Check",
+                "responses": {
+                    "200": {
+                        "description": "Healthy",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/status": {
+            "get": {
+                "description": "Get the result or pending status of a submission by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Judge"
+                ],
+                "summary": "Check Submission Status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "submission_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Submission result or pending",
+                        "schema": {
+                            "$ref": "#/definitions/judge.SubmissionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing submission_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/submit": {
+            "post": {
+                "description": "Queue a new code submission for judging.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Judge"
+                ],
+                "summary": "Submit Code",
+                "parameters": [
+                    {
+                        "description": "Submission Request",
+                        "name": "submission",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/judge.SubmissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted: submission_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Method not allowed, Invalid JSON, or Limits too high",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to queue submission",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.errorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.loginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.signupRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.successResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "judge.SubmissionRequest": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "description": "e.g., \"cpp\", \"python\"",
+                    "type": "string"
+                },
+                "memory_limit_kb": {
+                    "type": "integer"
+                },
+                "source_code": {
+                    "type": "string"
+                },
+                "submission_id": {
+                    "type": "string"
+                },
+                "test_cases": {
+                    "description": "Up to 20 cases",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/judge.TestCase"
+                    }
+                },
+                "time_limit_ms": {
+                    "type": "integer"
+                }
+            }
+        },
+        "judge.SubmissionResponse": {
+            "type": "object",
+            "properties": {
+                "compile_error": {
+                    "type": "string"
+                },
+                "overall_state": {
+                    "description": "\"Accepted\", \"Wrong Answer\", \"Compile Error\"",
+                    "type": "string"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/judge.TestCaseResult"
+                    }
+                },
+                "submission_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "judge.TestCase": {
+            "type": "object",
+            "properties": {
+                "expected_output": {
+                    "type": "string"
+                },
+                "input": {
+                    "type": "string"
+                },
+                "test_case_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "judge.TestCaseResult": {
+            "type": "object",
+            "properties": {
+                "actual_output": {
+                    "type": "string"
+                },
+                "expected_output": {
+                    "type": "string"
+                },
+                "input": {
+                    "type": "string"
+                },
+                "memory_kb": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "\"Passed\", \"Wrong Answer\", \"Runtime Error\"",
+                    "type": "string"
+                },
+                "stderr": {
+                    "type": "string"
+                },
+                "test_case_id": {
+                    "type": "integer"
+                },
+                "time_ms": {
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and then your personal token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

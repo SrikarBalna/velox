@@ -16,6 +16,16 @@ func NewDashboardHandler(svc *service.DashboardService) *DashboardHandler {
 	return &DashboardHandler{svc: svc}
 }
 
+// GetData returns user-specific dashboard data.
+// @Summary Get Dashboard Data
+// @Description Fetch profile and activity data for the authenticated user.
+// @Tags Dashboard
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]any "Dashboard data"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /dashboard [get]
 func (h *DashboardHandler) GetData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

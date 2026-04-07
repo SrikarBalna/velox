@@ -1,0 +1,281 @@
+basePath: /
+definitions:
+  handler.errorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handler.loginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.signupRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.successResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  judge.SubmissionRequest:
+    properties:
+      language:
+        description: e.g., "cpp", "python"
+        type: string
+      memory_limit_kb:
+        type: integer
+      source_code:
+        type: string
+      submission_id:
+        type: string
+      test_cases:
+        description: Up to 20 cases
+        items:
+          $ref: '#/definitions/judge.TestCase'
+        type: array
+      time_limit_ms:
+        type: integer
+    type: object
+  judge.SubmissionResponse:
+    properties:
+      compile_error:
+        type: string
+      overall_state:
+        description: '"Accepted", "Wrong Answer", "Compile Error"'
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/judge.TestCaseResult'
+        type: array
+      submission_id:
+        type: string
+    type: object
+  judge.TestCase:
+    properties:
+      expected_output:
+        type: string
+      input:
+        type: string
+      test_case_id:
+        type: integer
+    type: object
+  judge.TestCaseResult:
+    properties:
+      actual_output:
+        type: string
+      expected_output:
+        type: string
+      input:
+        type: string
+      memory_kb:
+        type: integer
+      status:
+        description: '"Passed", "Wrong Answer", "Runtime Error"'
+        type: string
+      stderr:
+        type: string
+      test_case_id:
+        type: integer
+      time_ms:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the Velox API server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Velox API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return a JWT token.
+      parameters:
+      - description: Login Request
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/handler.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: User Login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      description: Invalidate the session (stateless JWT logout).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+      summary: User Logout
+      tags:
+      - Auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with name, email, and password.
+      parameters:
+      - description: Signup Request
+        in: body
+        name: signup
+        required: true
+        schema:
+          $ref: '#/definitions/handler.signupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Invalid request or validation error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: User Signup
+      tags:
+      - Auth
+  /dashboard:
+    get:
+      description: Fetch profile and activity data for the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dashboard data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Dashboard Data
+      tags:
+      - Dashboard
+  /health:
+    get:
+      description: Check if the API server is healthy.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health Check
+      tags:
+      - General
+  /status:
+    get:
+      description: Get the result or pending status of a submission by ID.
+      parameters:
+      - description: Submission ID
+        in: query
+        name: submission_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Submission result or pending
+          schema:
+            $ref: '#/definitions/judge.SubmissionResponse'
+        "400":
+          description: Missing submission_id
+          schema:
+            type: string
+      summary: Check Submission Status
+      tags:
+      - Judge
+  /submit:
+    post:
+      consumes:
+      - application/json
+      description: Queue a new code submission for judging.
+      parameters:
+      - description: Submission Request
+        in: body
+        name: submission
+        required: true
+        schema:
+          $ref: '#/definitions/judge.SubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: 'Accepted: submission_id'
+          schema:
+            type: string
+        "400":
+          description: Method not allowed, Invalid JSON, or Limits too high
+          schema:
+            type: string
+        "500":
+          description: Failed to queue submission
+          schema:
+            type: string
+      summary: Submit Code
+      tags:
+      - Judge
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and then your personal token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

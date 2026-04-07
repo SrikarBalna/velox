@@ -16,7 +16,30 @@ import (
 	"github.com/rishik92/velox/auth/service"
 	"github.com/rishik92/velox/judge"
 	veloxRedis "github.com/rishik92/velox/shared/redis"
+
+	_ "github.com/rishik92/velox/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
+
+// @title Velox API
+// @version 1.0
+// @description This is the Velox API server.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and then your personal token.
 
 func main() {
 	veloxRedis.Connect()
@@ -62,11 +85,29 @@ func main() {
 	http.HandleFunc("/status", statusHandler)
 	http.HandleFunc("/health", healthHandler)
 
+	// Swagger documentation (only in development)
+	env := os.Getenv("GO_ENV")
+	if env == "" || env == "development" {
+		http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+		fmt.Println("Swagger UI available at: http://localhost:8080/swagger/index.html")
+	}
+
 	fmt.Println("API Server running on :8080")
 	handler := middleware.SecurityHeaders(corsMiddleware(http.DefaultServeMux))
 	log.Fatal(http.ListenAndServe(":8080", handler))
 }
 
+// submitHandler receives and queues a code submission.
+// @Summary Submit Code
+// @Description Queue a new code submission for judging.
+// @Tags Judge
+// @Accept json
+// @Produce json
+// @Param submission body judge.SubmissionRequest true "Submission Request"
+// @Success 202 {string} string "Accepted: submission_id"
+// @Failure 400 {string} string "Method not allowed, Invalid JSON, or Limits too high"
+// @Failure 500 {string} string "Failed to queue submission"
+// @Router /submit [post]
 func submitHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -100,6 +141,15 @@ func submitHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, `{"submission_id": "%s"}`, req.SubmissionID)
 }
 
+// statusHandler checks the status of a submission.
+// @Summary Check Submission Status
+// @Description Get the result or pending status of a submission by ID.
+// @Tags Judge
+// @Produce json
+// @Param submission_id query string true "Submission ID"
+// @Success 200 {object} judge.SubmissionResponse "Submission result or pending"
+// @Failure 400 {string} string "Missing submission_id"
+// @Router /status [get]
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	subID := r.URL.Query().Get("submission_id")
 	if subID == "" {

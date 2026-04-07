@@ -36,6 +36,17 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+// Signup handles user registration.
+// @Summary User Signup
+// @Description Register a new user with name, email, and password.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param signup body signupRequest true "Signup Request"
+// @Success 201 {object} successResponse "User created"
+// @Failure 400 {object} errorResponse "Invalid request or validation error"
+// @Failure 500 {object} errorResponse "Internal server error"
+// @Router /auth/signup [post]
 func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -69,6 +80,17 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Login handles user authentication.
+// @Summary User Login
+// @Description Authenticate a user and return a JWT token.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param login body loginRequest true "Login Request"
+// @Success 200 {object} successResponse "Login successful"
+// @Failure 401 {object} errorResponse "Invalid credentials"
+// @Failure 500 {object} errorResponse "Internal server error"
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -100,6 +122,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Logout handles user logout.
+// @Summary User Logout
+// @Description Invalidate the session (stateless JWT logout).
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} successResponse "Logout successful"
+// @Router /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
