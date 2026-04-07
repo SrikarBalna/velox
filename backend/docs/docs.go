@@ -180,29 +180,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
-            "get": {
-                "description": "Check if the API server is healthy.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "General"
-                ],
-                "summary": "Health Check",
-                "responses": {
-                    "200": {
-                        "description": "Healthy",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/status": {
             "get": {
                 "description": "Get the result or pending status of a submission by ID.",

@@ -204,21 +204,6 @@ paths:
       summary: Get Dashboard Data
       tags:
       - Dashboard
-  /health:
-    get:
-      description: Check if the API server is healthy.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Healthy
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Health Check
-      tags:
-      - General
   /status:
     get:
       description: Get the result or pending status of a submission by ID.
