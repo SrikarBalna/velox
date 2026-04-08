@@ -56,6 +56,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 		&user.ID,
 		&user.Name,
 		&user.Email,
+		&user.PasswordHash,
 		&user.CreatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -79,6 +80,7 @@ func (r *UserRepository) GetUserByID(id string) (*model.User, error) {
 		&user.ID,
 		&user.Name,
 		&user.Email,
+		&user.PasswordHash,
 		&user.CreatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {

@@ -70,19 +70,37 @@ func main() {
 	dashboardSvc := service.NewDashboardService(repo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 
+	// Set up API Key Module
+	apiKeyRepo := repository.NewAPIKeyRepository(database)
+	apiKeySvc := service.NewAPIKeyService(apiKeyRepo)
+	apiKeyHandler := handler.NewAPIKeyHandler(apiKeySvc)
+	apiKeyMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeySvc)
+
 	// Auth Routes
 	http.HandleFunc("/auth/signup", authHandler.Signup)
 	http.HandleFunc("/auth/login", authHandler.Login)
 	http.HandleFunc("/auth/logout", authHandler.Logout)
+
+	// API Key Management (Require Session Auth)
+	apiKeyMux := http.NewServeMux()
+	apiKeyMux.HandleFunc("/auth/api-keys", apiKeyHandler.GenerateKey)
+	http.Handle("/auth/api-keys", middleware.RequireAuth(apiKeyMux))
 
 	// Protected Dashboard Route
 	dashboardMux := http.NewServeMux()
 	dashboardMux.HandleFunc("/dashboard", dashboardHandler.GetData)
 	http.Handle("/dashboard", middleware.RequireAuth(dashboardMux))
 
+	// Submission API (Protected by API Key)
+	submitMux := http.NewServeMux()
+	submitMux.HandleFunc("/submit", submitHandler)
+	http.Handle("/submit", apiKeyMiddleware.Authenticate(middleware.CheckScope("submit", submitMux)))
+
+	statusMux := http.NewServeMux()
+	statusMux.HandleFunc("/status", statusHandler)
+	http.Handle("/status", apiKeyMiddleware.Authenticate(middleware.CheckScope("status", statusMux)))
+
 	// General API
-	http.HandleFunc("/submit", submitHandler)
-	http.HandleFunc("/status", statusHandler)
 	http.HandleFunc("/health", healthHandler)
 
 	// Swagger documentation (only in development)

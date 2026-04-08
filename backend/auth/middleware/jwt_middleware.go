@@ -12,9 +12,6 @@ type contextKey string
 
 const UserIDKey contextKey = "userID"
 
-// RequireAuth is a middleware that intercepts incoming requests, extracts the Bearer
-// token from the Authorization header, and validates it. If valid, it adds the
-// generic user claims to the request context.
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
