@@ -28,8 +28,8 @@ jobs:
         with:
           go-version: '1.24.x'
 
-      - name: Install TypeScript (and esbuild)
-        run: sudo npm install -g typescript esbuild
+      - name: Install TypeScript
+        run: sudo npm install -g typescript
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4

@@ -27,7 +27,7 @@ graph TB
             subgraph "velox (Dockerfile.worker)"
                 W_BUILD["Build Stage: golang:latest<br/>CGO_ENABLED=0 GOOS=linux<br/>go build ./cmd/worker"]
                 W_RUNTIME["Runtime: debian:bookworm-slim<br/>User: runner<br/>Binary: /app/main"]
-                W_TOOLS["Installed Compilers/Runtimes:<br/>• gcc, g++<br/>• OpenJDK 17<br/>• Python 3<br/>• Node.js + npm<br/>• .NET SDK 8.0<br/>• esbuild (global)"]
+                W_TOOLS["Installed Compilers/Runtimes:<br/>• gcc, g++<br/>• OpenJDK 17<br/>• Python 3<br/>• Node.js + npm<br/>• .NET SDK 8.0<br/>• TypeScript (tsc)"]
             end
         end
 
@@ -73,7 +73,7 @@ graph LR
         W3["Stage 2: debian:bookworm-slim<br/><b>Runtime</b>"]
         W4["apt-get install:<br/>gcc g++ python3 nodejs npm openjdk-17"]
         W5["COPY --from=dotnet-sdk<br/>/usr/share/dotnet"]
-        W6["npm install -g esbuild"]
+        W6["npm install -g typescript"]
         W7["COPY --from=builder<br/>/build/backend/main"]
         W8["USER runner<br/>ENTRYPOINT main"]
     end
@@ -102,7 +102,7 @@ graph TD
         Checkout["actions/checkout@v4"]
         SetupGo["actions/setup-go@v5<br/>go 1.24.x"]
         SetupDotnet["actions/setup-dotnet@v4<br/>.NET 8.0.x"]
-        InstallTS["npm install -g typescript esbuild"]
+        InstallTS["npm install -g typescript"]
 
         subgraph "Job 1: Unit Tests — Matrix Strategy (fail-fast: false)"
             TestC["go test -race<br/>TestProcessSubmission_C"]
@@ -200,7 +200,7 @@ graph TB
             WORKER["Go Worker Process<br/>cmd/worker/main.go<br/>Infinite polling loop"]
             PS["processSubmission<br/>Strategy Pattern routing + compilation"]
             RB["runBatch<br/>Execution + measurement"]
-            COMPILERS["gcc | g++ | javac | dotnet<br/>python3 | node | esbuild"]
+            COMPILERS["gcc | g++ | javac | dotnet<br/>python3 | node | tsc"]
         end
     end
 

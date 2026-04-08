@@ -20,7 +20,7 @@ if (input.length >= 2) {
 		},
 		{
 			Name: "TS_Compile_Error",
-			SourceCode: `const a: number = "string";`, // TypeScript compilation error (Type 'string' is not assignable to type 'number')
+			SourceCode: `const a: number = "string";`, // TypeScript type error: Type 'string' is not assignable to type 'number'
 			ExpectedState: "Compile Error",
 		},
 		{

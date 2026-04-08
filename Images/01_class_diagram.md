@@ -61,7 +61,7 @@ classDiagram
         +Prepare(ws, sourceCode) dotnet build
     }
     class TSStrategy {
-        +Prepare(ws, sourceCode) esbuild transpilation
+        +Prepare(ws, sourceCode) tsc compilation
     }
     class InterpreterStrategyManager {
         +string Executable

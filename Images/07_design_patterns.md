@@ -51,7 +51,7 @@ type LanguageStrategy interface {
 | `CPPStrategy` | C++ | `g++ -O2` | `processSubmission.go` |
 | `JavaStrategy` | Java | `javac` → `java -cp` | `processSubmission.go` |
 | `CSharpStrategy` | C# | `dotnet build` → `dotnet run` | `processSubmission.go` |
-| `TSStrategy` | TypeScript | `esbuild` → `node` | `processSubmission.go` |
+| `TSStrategy` | TypeScript | `tsc` → `node` | `processSubmission.go` |
 | `PythonStrategy` | Python | `python3` (interpreted) | `processSubmission.go` |
 | `NodeStrategy` | Node.js | `node` (interpreted) | `processSubmission.go` |
 

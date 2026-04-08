@@ -120,7 +120,7 @@ flowchart LR
 | Field | Value |
 |-------|-------|
 | **Actor** | Worker (internal) |
-| **Supported Languages** | C (gcc), C++ (g++), Java (javac), TypeScript (esbuild), C# (dotnet build) |
+| **Supported Languages** | C (gcc), C++ (g++), Java (javac), TypeScript (tsc), C# (dotnet build) |
 | **Interpreted Languages** | Python, Node.js — no compilation, file is written to temp dir and executed directly |
 | **Error Output** | Compiler stderr is captured and returned as `CompileError` field |
 
@@ -165,7 +165,7 @@ graph LR
         C["C<br/>gcc → binary"]
         CPP["C++<br/>g++ → binary"]
         Java["Java<br/>javac → java -cp"]
-        TS["TypeScript<br/>esbuild → node"]
+        TS["TypeScript<br/>tsc → node"]
         CS["C#<br/>dotnet build → dotnet run"]
     end
 
