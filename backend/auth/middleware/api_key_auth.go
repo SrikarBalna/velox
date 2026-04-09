@@ -44,8 +44,9 @@ func (m *APIKeyAuthMiddleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Inject userID and scopes into context
+		// Inject identity into context
 		ctx := context.WithValue(r.Context(), UserIDKey, apiKey.UserID)
+		ctx = context.WithValue(ctx, APIKeyIDKey, apiKey.ID)
 		ctx = context.WithValue(ctx, ScopesKey, apiKey.Scopes)
 
 		next.ServeHTTP(w, r.WithContext(ctx))

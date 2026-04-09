@@ -213,6 +213,52 @@
                 }
             }
         },
+        "/auth/api-keys/stats": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve performance metrics and usage peaks for a specific API key.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "APIKeys"
+                ],
+                "summary": "Get API Key Stats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API Key Statistics",
+                        "schema": {
+                            "$ref": "#/definitions/model.APIKeyStats"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticate a user and return a JWT token.",
@@ -368,87 +414,6 @@
                     }
                 }
             }
-        },
-        "/status": {
-            "get": {
-                "description": "Get the result or pending status of a submission by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Judge"
-                ],
-                "summary": "Check Submission Status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Submission ID",
-                        "name": "submission_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Submission result or pending",
-                        "schema": {
-                            "$ref": "#/definitions/judge.SubmissionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Missing submission_id",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/submit": {
-            "post": {
-                "description": "Queue a new code submission for judging.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Judge"
-                ],
-                "summary": "Submit Code",
-                "parameters": [
-                    {
-                        "description": "Submission Request",
-                        "name": "submission",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/judge.SubmissionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted: submission_id",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Method not allowed, Invalid JSON, or Limits too high",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to queue submission",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -539,99 +504,6 @@
                 }
             }
         },
-        "judge.SubmissionRequest": {
-            "type": "object",
-            "properties": {
-                "language": {
-                    "description": "e.g., \"cpp\", \"python\"",
-                    "type": "string"
-                },
-                "memory_limit_kb": {
-                    "type": "integer"
-                },
-                "source_code": {
-                    "type": "string"
-                },
-                "submission_id": {
-                    "type": "string"
-                },
-                "test_cases": {
-                    "description": "Up to 20 cases",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/judge.TestCase"
-                    }
-                },
-                "time_limit_ms": {
-                    "type": "integer"
-                }
-            }
-        },
-        "judge.SubmissionResponse": {
-            "type": "object",
-            "properties": {
-                "compile_error": {
-                    "type": "string"
-                },
-                "overall_state": {
-                    "description": "\"Accepted\", \"Wrong Answer\", \"Compile Error\"",
-                    "type": "string"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/judge.TestCaseResult"
-                    }
-                },
-                "submission_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "judge.TestCase": {
-            "type": "object",
-            "properties": {
-                "expected_output": {
-                    "type": "string"
-                },
-                "input": {
-                    "type": "string"
-                },
-                "test_case_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "judge.TestCaseResult": {
-            "type": "object",
-            "properties": {
-                "actual_output": {
-                    "type": "string"
-                },
-                "expected_output": {
-                    "type": "string"
-                },
-                "input": {
-                    "type": "string"
-                },
-                "memory_kb": {
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "\"Passed\", \"Wrong Answer\", \"Runtime Error\"",
-                    "type": "string"
-                },
-                "stderr": {
-                    "type": "string"
-                },
-                "test_case_id": {
-                    "type": "integer"
-                },
-                "time_ms": {
-                    "type": "integer"
-                }
-            }
-        },
         "model.APIKey": {
             "type": "object",
             "properties": {
@@ -661,6 +533,32 @@
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "model.APIKeyStats": {
+            "type": "object",
+            "properties": {
+                "api_key_id": {
+                    "type": "string"
+                },
+                "error_counts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "peak_rpd": {
+                    "type": "integer"
+                },
+                "peak_rpm": {
+                    "type": "integer"
+                },
+                "success_rate": {
+                    "type": "number"
+                },
+                "total_requests": {
+                    "type": "integer"
                 }
             }
         }

@@ -12,6 +12,7 @@ import (
 	"github.com/rishik92/velox/auth/db"
 	"github.com/rishik92/velox/auth/handler"
 	"github.com/rishik92/velox/auth/middleware"
+	"github.com/rishik92/velox/auth/model"
 	"github.com/rishik92/velox/auth/repository"
 	"github.com/rishik92/velox/auth/service"
 	"github.com/rishik92/velox/judge"
@@ -73,8 +74,18 @@ func main() {
 	// Set up API Key Module
 	apiKeyRepo := repository.NewAPIKeyRepository(database)
 	apiKeySvc := service.NewAPIKeyService(apiKeyRepo)
-	apiKeyHandler := handler.NewAPIKeyHandler(apiKeySvc)
+	
+	// Set up API Logging Module
+	logRepo := repository.NewAPILogRepository(database)
+	apiLogSvc := service.NewAPILogService(logRepo)
+
+	apiKeyHandler := handler.NewAPIKeyHandler(apiKeySvc, apiLogSvc)
 	apiKeyMiddleware := middleware.NewAPIKeyAuthMiddleware(apiKeySvc)
+
+	// Set up Judge Module
+	judgeHandler := &JudgeHandler{
+		apiLogSvc: apiLogSvc,
+	}
 
 	// Auth Routes
 	http.HandleFunc("/auth/signup", authHandler.Signup)
@@ -82,20 +93,11 @@ func main() {
 	http.HandleFunc("/auth/logout", authHandler.Logout)
 
 	// API Key Management (Require Session Auth)
-	http.Handle("/auth/api-keys", middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			apiKeyHandler.GenerateKey(w, r)
-		case http.MethodGet:
-			apiKeyHandler.ListKeys(w, r)
-		case http.MethodPatch:
-			apiKeyHandler.UpdateKey(w, r)
-		case http.MethodDelete:
-			apiKeyHandler.DeleteKey(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})))
+	http.Handle("POST /auth/api-keys", middleware.RequireAuth(http.HandlerFunc(apiKeyHandler.GenerateKey)))
+	http.Handle("GET /auth/api-keys", middleware.RequireAuth(http.HandlerFunc(apiKeyHandler.ListKeys)))
+	http.Handle("PATCH /auth/api-keys", middleware.RequireAuth(http.HandlerFunc(apiKeyHandler.UpdateKey)))
+	http.Handle("DELETE /auth/api-keys", middleware.RequireAuth(http.HandlerFunc(apiKeyHandler.DeleteKey)))
+	http.Handle("GET /auth/api-keys/stats", middleware.RequireAuth(http.HandlerFunc(apiKeyHandler.GetStats)))
 
 	// Protected Dashboard Route
 	dashboardMux := http.NewServeMux()
@@ -104,11 +106,11 @@ func main() {
 
 	// Submission API (Protected by API Key)
 	submitMux := http.NewServeMux()
-	submitMux.HandleFunc("/submit", submitHandler)
+	submitMux.HandleFunc("/submit", judgeHandler.Submit)
 	http.Handle("/submit", apiKeyMiddleware.Authenticate(middleware.CheckScope("submit", submitMux)))
 
 	statusMux := http.NewServeMux()
-	statusMux.HandleFunc("/status", statusHandler)
+	statusMux.HandleFunc("/status", judgeHandler.Status)
 	http.Handle("/status", apiKeyMiddleware.Authenticate(middleware.CheckScope("status", statusMux)))
 
 	// General API
@@ -126,22 +128,17 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", handler))
 }
 
-// submitHandler receives and queues a code submission.
-// @Summary Submit Code
-// @Description Queue a new code submission for judging.
-// @Tags Judge
-// @Accept json
-// @Produce json
-// @Param submission body judge.SubmissionRequest true "Submission Request"
-// @Success 202 {string} string "Accepted: submission_id"
-// @Failure 400 {string} string "Method not allowed, Invalid JSON, or Limits too high"
-// @Failure 500 {string} string "Failed to queue submission"
-// @Router /submit [post]
-func submitHandler(w http.ResponseWriter, r *http.Request) {
+type JudgeHandler struct {
+	apiLogSvc *service.APILogService
+}
+
+func (h *JudgeHandler) Submit(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	apiKeyID, _ := r.Context().Value(middleware.APIKeyIDKey).(string)
 
 	var req judge.SubmissionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -154,9 +151,10 @@ func submitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate unique ID
 	req.SubmissionID = uuid.New().String()
 
+	startTime := time.Now()
+	
 	// Push to Redis
 	raw, _ := json.Marshal(req)
 	if err := veloxRedis.PushResult("submissions", string(raw)); err != nil {
@@ -164,37 +162,61 @@ func submitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Respond immediately with ID
+	// Async Log the initial request
+	h.apiLogSvc.Log(&model.APILog{
+		APIKeyID:     apiKeyID,
+		SubmissionID: req.SubmissionID,
+		Endpoint:     "/submit",
+		Method:       "POST",
+		StatusCode:   http.StatusAccepted,
+		DurationMs:   int(time.Since(startTime).Milliseconds()),
+		Language:     req.Language,
+		OverallState: "Pending",
+		CreatedAt:    time.Now(),
+	})
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	_, _ = fmt.Fprintf(w, `{"submission_id": "%s"}`, req.SubmissionID)
 }
 
-// statusHandler checks the status of a submission.
-// @Summary Check Submission Status
-// @Description Get the result or pending status of a submission by ID.
-// @Tags Judge
-// @Produce json
-// @Param submission_id query string true "Submission ID"
-// @Success 200 {object} judge.SubmissionResponse "Submission result or pending"
-// @Failure 400 {string} string "Missing submission_id"
-// @Router /status [get]
-func statusHandler(w http.ResponseWriter, r *http.Request) {
+func (h *JudgeHandler) Status(w http.ResponseWriter, r *http.Request) {
 	subID := r.URL.Query().Get("submission_id")
 	if subID == "" {
 		http.Error(w, "Missing submission_id", http.StatusBadRequest)
 		return
 	}
 
+	apiKeyID, _ := r.Context().Value(middleware.APIKeyIDKey).(string)
+
+	startTime := time.Now()
+
 	// Check Redis for result
 	resultQueue := "results:" + subID
 	raw, found := veloxRedis.PopSubmission(resultQueue, 1*time.Second)
 
 	if !found {
-		// Still processing or not found
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprintf(w, `{"status": "pending"}`)
 		return
+	}
+
+	// Parse result to log detailed state
+	var res judge.SubmissionResponse
+	if err := json.Unmarshal([]byte(raw), &res); err == nil {
+		// Update the initial log with the final result
+		h.apiLogSvc.UpdateResult(subID, res.OverallState, res.CompileError)
+
+		// Also log THIS status request itself
+		h.apiLogSvc.Log(&model.APILog{
+			APIKeyID:     apiKeyID,
+			Endpoint:     "/status",
+			Method:       "GET",
+			StatusCode:   http.StatusOK,
+			DurationMs:   int(time.Since(startTime).Milliseconds()),
+			OverallState: res.OverallState,
+			CreatedAt:    time.Now(),
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")

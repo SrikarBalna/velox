@@ -10,7 +10,10 @@ import (
 
 type contextKey string
 
-const UserIDKey contextKey = "userID"
+const (
+	UserIDKey   contextKey = "userID"
+	APIKeyIDKey contextKey = "apiKeyID"
+)
 
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -11,11 +11,12 @@ import (
 )
 
 type APIKeyHandler struct {
-	svc *service.APIKeyService
+	svc    *service.APIKeyService
+	logSvc *service.APILogService
 }
 
-func NewAPIKeyHandler(svc *service.APIKeyService) *APIKeyHandler {
-	return &APIKeyHandler{svc: svc}
+func NewAPIKeyHandler(svc *service.APIKeyService, logSvc *service.APILogService) *APIKeyHandler {
+	return &APIKeyHandler{svc: svc, logSvc: logSvc}
 }
 
 type GenerateKeyRequest struct {
@@ -190,4 +191,38 @@ func (h *APIKeyHandler) DeleteKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// GetStats returns usage statistics for an API key.
+// @Summary Get API Key Stats
+// @Description Retrieve performance metrics and usage peaks for a specific API key.
+// @Tags APIKeys
+// @Produce json
+// @Security Bearer
+// @Param id query string true "API Key ID"
+// @Success 200 {object} model.APIKeyStats "API Key Statistics"
+// @Failure 401 {object} errorResponse "Unauthorized"
+// @Failure 404 {object} errorResponse "Not Found"
+// @Router /auth/api-keys/stats [get]
+func (h *APIKeyHandler) GetStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	stats, err := h.logSvc.GetStats(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to get stats: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(stats)
 }
