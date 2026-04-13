@@ -4,7 +4,7 @@ This directory contains comprehensive UML and architectural diagrams for the **V
 
 ---
 
-## 📑 Document Index
+## Document Index
 
 | # | Document | Description |
 |---|----------|-------------|
@@ -18,7 +18,7 @@ This directory contains comprehensive UML and architectural diagrams for the **V
 
 ---
 
-## 🏗 Architecture at a Glance
+## Architecture at a Glance
 
 Velox follows a **producer-consumer** architecture with a **Strategy Pattern** based execution engine:
 
@@ -45,7 +45,7 @@ Velox follows a **producer-consumer** architecture with a **Strategy Pattern** b
 
 ---
 
-## 🧩 Key Design Patterns
+## Key Design Patterns
 
 For a complete reference of all design patterns used in Velox, see [07_design_patterns.md](./07_design_patterns.md).
 
@@ -56,11 +56,10 @@ For a complete reference of all design patterns used in Velox, see [07_design_pa
 | Adapter | `DefaultRunner`, `LocalTempStorageAdapter` |
 | Repository | `auth/repository/` — Data access layer |
 | Producer-Consumer | API → Redis → Worker |
-| Middleware Chain | `auth/middleware/` — JWT, API Key, Security Headers |
 
 ---
 
-## 📖 How to Read the Diagrams
+## How to Read the Diagrams
 
 All diagrams use [Mermaid](https://mermaid.js.org/) syntax. You can render them:
 

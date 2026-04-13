@@ -13,14 +13,13 @@ A comprehensive catalog of all **design patterns**, **architectural patterns**, 
 | 3 | [Adapter Pattern](#3-adapter-pattern) | Structural | `DefaultRunner`, `LocalTempStorageAdapter` |
 | 4 | [Repository Pattern](#4-repository-pattern) | Data Access | `auth/repository/` |
 | 5 | [Service Layer Pattern](#5-service-layer-pattern) | Architectural | `auth/service/` |
-| 6 | [Middleware / Chain of Responsibility](#6-middleware--chain-of-responsibility) | Behavioral | `auth/middleware/` |
-| 7 | [Producer-Consumer Pattern](#7-producer-consumer-pattern) | Concurrency | API → Redis → Worker |
-| 8 | [Singleton Pattern](#8-singleton-pattern) | Creational | `shared/redis/` |
-| 9 | [Template Method Pattern](#9-template-method-pattern) | Behavioral | `InterpreterStrategyManager` |
-| 10 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
-| 11 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
-| 12 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
-| 13 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
+| 6 | [Producer-Consumer Pattern](#7-producer-consumer-pattern) | Concurrency | API → Redis → Worker |
+| 7 | [Singleton Pattern](#8-singleton-pattern) | Creational | `shared/redis/` |
+| 8 | [Template Method Pattern](#9-template-method-pattern) | Behavioral | `InterpreterStrategyManager` |
+| 9 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
+| 10 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
+| 11 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
+| 12 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
 
 ---
 
@@ -207,36 +206,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 
 ---
 
-## 6. Middleware / Chain of Responsibility
-
-**Category:** Behavioral  
-**Location:** `backend/auth/middleware/`
-
-### What It Does
-Each middleware is a function `func(next http.Handler) http.Handler` that wraps the next handler. They form a chain where each link can inspect, modify, or reject the request.
-
-### Middleware Chain
-
-```
-Request → SecurityHeaders → CORS → APIKeyAuth → CheckScope → Handler → Response
-```
-
-| Middleware | Purpose |
-|-----------|---------|
-| `SecurityHeaders` | Adds `X-Content-Type-Options`, `X-Frame-Options`, `CSP`, `Referrer-Policy` |
-| `corsMiddleware` | Sets `Access-Control-Allow-*` headers, handles `OPTIONS` preflight |
-| `RequireAuth` | Validates JWT Bearer token, injects `userID` into `context` |
-| `APIKeyAuthMiddleware.Authenticate` | Validates API key, injects `userID` + `scopes` into `context` |
-| `CheckScope` | Verifies the API key has the required scope (e.g., `"submit"`, `"status"`) |
-
-### Why
-- **Separation of Concerns** — Authentication logic is not mixed with business logic.
-- **Composability** — Middlewares can be stacked in any order. Some routes use JWT auth, others use API key auth.
-- **Context Propagation** — User identity flows through `context.Value` — no global state.
-
----
-
-## 7. Producer-Consumer Pattern
+## 6. Producer-Consumer Pattern
 
 **Category:** Concurrency  
 **Location:** `cmd/api/`, `cmd/worker/`, `shared/redis/`
@@ -259,7 +229,7 @@ Worker ──LPUSH──▸ Redis["results:<id>"] ◂──BRPOP── API Serve
 
 ---
 
-## 8. Singleton Pattern
+## 7. Singleton Pattern
 
 **Category:** Creational  
 **Location:** `backend/shared/redis/redis.go`
@@ -285,7 +255,7 @@ func Connect() {
 
 ---
 
-## 9. Template Method Pattern
+## 8. Template Method Pattern
 
 **Category:** Behavioral  
 **Location:** `backend/processSubmission/processSubmission.go`
@@ -297,7 +267,7 @@ This is closely related to the **Composition Pattern** (#2) — Go achieves the 
 
 ---
 
-## 10. Domain Model Pattern
+## 9. Domain Model Pattern
 
 **Category:** Architectural  
 **Location:** `backend/judge/judge.go`
@@ -311,7 +281,7 @@ The `judge` package defines pure data structures with no business logic. It serv
 
 ---
 
-## 11. Factory Pattern
+## 10. Factory Pattern
 
 **Category:** Creational  
 **Location:** `backend/processSubmission/processSubmission.go`, `backend/auth/`
@@ -333,7 +303,7 @@ Constructor functions create and configure complex objects:
 
 ---
 
-## 12. Decorator Pattern
+## 11. Decorator Pattern
 
 **Category:** Structural  
 **Location:** `backend/cmd/api/main.go`, `backend/auth/middleware/`
@@ -351,7 +321,7 @@ Each wrapper adds one responsibility (authentication, CORS, security headers) wh
 
 ---
 
-## 13. Single Responsibility Principle (SRP)
+## 12. Single Responsibility Principle (SRP)
 
 **Category:** SOLID  
 **Location:** Throughout the codebase
