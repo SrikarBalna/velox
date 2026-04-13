@@ -31,7 +31,7 @@ sequenceDiagram
     API->>API: Generate UUID<br/>req.SubmissionID = uuid.New()
     API->>Redis: LPUSH "submissions" <serialized JSON>
     Redis-->>API: OK
-    API-)LogSvc: Async Log(State: Pending)
+    API-->>LogSvc: Async Log(State: Pending)
     API-->>-Client: 202 Accepted<br/>{ "submission_id": "abc-123" }
 
     Note over Client,Binary: ── PHASE 2: PROCESSING ──
@@ -69,10 +69,12 @@ sequenceDiagram
     Note over Client,Binary: ── PHASE 3: POLLING ──
 
     Client->>+API: GET /status?submission_id=abc-123
+    API->>AuthMW: Validate Bearer Token
+    AuthMW-->>API: Proceed (APIKeyID injected)
     API->>+Redis: BRPOP "results:abc-123" 1s
     Redis-->>-API: <serialized JSON>
-    API-)LogSvc: UpdateResult(State: Accepted)
-    API-)LogSvc: Async Log(/status request)
+    API-->>LogSvc: UpdateResult(State: Accepted)
+    API-->>LogSvc: Async Log(/status request)
     API-->>-Client: 200 OK<br/>{ "submission_id": "abc-123", "overall_state": "Accepted", "results": [...] }
 ```
 
@@ -114,7 +116,7 @@ sequenceDiagram
     Client->>+API: GET /status?submission_id=xyz-456
     API->>+Redis: BRPOP "results:xyz-456" 1s
     Redis-->>-API: <JSON>
-    API-->>-Client: { "overall_state": "Compile Error", "compile_error": "error: expected ';'..." }
+    API-->>-Client: { "overall_state": "Compile Error", "compile_error": "error: syntax error..." }
 ```
 
 ---
