@@ -17,11 +17,10 @@ A comprehensive catalog of all **design patterns**, **architectural patterns**, 
 | 7 | [Producer-Consumer Pattern](#7-producer-consumer-pattern) | Concurrency | API → Redis → Worker |
 | 8 | [Singleton Pattern](#8-singleton-pattern) | Creational | `shared/redis/` |
 | 9 | [Template Method Pattern](#9-template-method-pattern) | Behavioral | `InterpreterStrategyManager` |
-| 10 | [Table-Driven Tests](#10-table-driven-tests) | Testing | `processSubmission/*_test.go` |
-| 11 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
-| 12 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
-| 13 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
-| 14 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
+| 10 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
+| 11 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
+| 12 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
+| 13 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
 
 ---
 
@@ -298,31 +297,7 @@ This is closely related to the **Composition Pattern** (#2) — Go achieves the 
 
 ---
 
-## 10. Table-Driven Tests
-
-**Category:** Testing  
-**Location:** `backend/processSubmission/*_test.go`
-
-### What It Does
-All test files follow Go's table-driven test pattern. A shared `ExecutionTestCase` struct defines test parameters, and `runLanguageTests()` iterates over them.
-
-```go
-type ExecutionTestCase struct {
-    Name          string
-    SourceCode    string
-    TestCases     []judge.TestCase
-    ExpectedState string  // "Accepted", "Compile Error", etc.
-}
-```
-
-### Why
-- **DRY** — Adding a new test case means adding one struct literal, not writing a new test function.
-- **Consistency** — All languages use the same harness, so test coverage is uniform.
-- **Readability** — The test intent is clear from the struct fields.
-
----
-
-## 11. Domain Model Pattern
+## 10. Domain Model Pattern
 
 **Category:** Architectural  
 **Location:** `backend/judge/judge.go`
@@ -336,7 +311,7 @@ The `judge` package defines pure data structures with no business logic. It serv
 
 ---
 
-## 12. Factory Pattern
+## 11. Factory Pattern
 
 **Category:** Creational  
 **Location:** `backend/processSubmission/processSubmission.go`, `backend/auth/`
@@ -358,7 +333,7 @@ Constructor functions create and configure complex objects:
 
 ---
 
-## 13. Decorator Pattern
+## 12. Decorator Pattern
 
 **Category:** Structural  
 **Location:** `backend/cmd/api/main.go`, `backend/auth/middleware/`
@@ -376,7 +351,7 @@ Each wrapper adds one responsibility (authentication, CORS, security headers) wh
 
 ---
 
-## 14. Single Responsibility Principle (SRP)
+## 13. Single Responsibility Principle (SRP)
 
 **Category:** SOLID  
 **Location:** Throughout the codebase
