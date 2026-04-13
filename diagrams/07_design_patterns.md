@@ -15,11 +15,10 @@ A comprehensive catalog of all **design patterns**, **architectural patterns**, 
 | 5 | [Service Layer Pattern](#5-service-layer-pattern) | Architectural | `auth/service/` |
 | 6 | [Producer-Consumer Pattern](#7-producer-consumer-pattern) | Concurrency | API → Redis → Worker |
 | 7 | [Singleton Pattern](#8-singleton-pattern) | Creational | `shared/redis/` |
-| 8 | [Template Method Pattern](#9-template-method-pattern) | Behavioral | `InterpreterStrategyManager` |
-| 9 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
-| 10 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
-| 11 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
-| 12 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
+| 8 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
+| 9 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
+| 10 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
+| 11 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
 
 ---
 
@@ -257,19 +256,7 @@ func Connect() {
 
 ---
 
-## 8. Template Method Pattern
-
-**Category:** Behavioral  
-**Location:** `backend/processSubmission/processSubmission.go`
-
-### What It Does
-`InterpreterStrategyManager.Prepare()` defines the skeleton of the algorithm (write file → return interpreter path). Substrategies (`PythonStrategy`, `NodeStrategy`) inherit this behavior via embedding. They can override `Prepare()` if needed, but the default implementation handles the common case.
-
-This is closely related to the **Composition Pattern** (#2) — Go achieves the Template Method via embedding rather than abstract base classes.
-
----
-
-## 9. Domain Model Pattern
+## 8. Domain Model Pattern
 
 **Category:** Architectural  
 **Location:** `backend/judge/judge.go`
@@ -283,7 +270,7 @@ The `judge` package defines pure data structures with no business logic. It serv
 
 ---
 
-## 10. Factory Pattern
+## 9. Factory Pattern
 
 **Category:** Creational  
 **Location:** `backend/processSubmission/processSubmission.go`, `backend/auth/`
@@ -305,7 +292,7 @@ Constructor functions create and configure complex objects:
 
 ---
 
-## 11. Decorator Pattern
+## 10. Decorator Pattern
 
 **Category:** Structural  
 **Location:** `backend/cmd/api/main.go`, `backend/auth/middleware/`
@@ -323,7 +310,7 @@ Each wrapper adds one responsibility (authentication, CORS, security headers) wh
 
 ---
 
-## 12. Single Responsibility Principle (SRP)
+## 11. Single Responsibility Principle (SRP)
 
 **Category:** SOLID  
 **Location:** Throughout the codebase
