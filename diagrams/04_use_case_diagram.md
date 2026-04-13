@@ -57,19 +57,19 @@ flowchart LR
     User --> UC13
 
     style User fill:#ff5a00,color:#fff,stroke:#333
-    style UC1 fill:#e0f2fe,stroke:#0284c7
-    style UC2 fill:#e0f2fe,stroke:#0284c7
-    style UC3 fill:#e0f2fe,stroke:#0284c7
-    style UC4 fill:#fef3c7,stroke:#d97706
-    style UC5 fill:#fef3c7,stroke:#d97706
-    style UC6 fill:#fef3c7,stroke:#d97706
-    style UC7 fill:#fef3c7,stroke:#d97706
-    style UC8 fill:#dcfce7,stroke:#16a34a
-    style UC9 fill:#dcfce7,stroke:#16a34a
-    style UC10 fill:#fce7f3,stroke:#db2777
-    style UC11 fill:#fce7f3,stroke:#db2777
-    style UC12 fill:#fce7f3,stroke:#db2777
-    style UC13 fill:#f3e8ff,stroke:#9333ea
+    style UC1 fill:#e0f2fe,stroke:#000000
+    style UC2 fill:#e0f2fe,stroke:#000000
+    style UC3 fill:#e0f2fe,stroke:#000000
+    style UC4 fill:#fef3c7,stroke:#000000
+    style UC5 fill:#fef3c7,stroke:#000000
+    style UC6 fill:#fef3c7,stroke:#000000
+    style UC7 fill:#fef3c7,stroke:#000000
+    style UC8 fill:#dcfce7,stroke:#000000
+    style UC9 fill:#dcfce7,stroke:#000000
+    style UC10 fill:#fce7f3,stroke:#000000
+    style UC11 fill:#fce7f3,stroke:#000000
+    style UC12 fill:#fce7f3,stroke:#000000
+    style UC13 fill:#f3e8ff,stroke:#000000
 ```
 
 ---

@@ -29,7 +29,9 @@ A comprehensive catalog of all **design patterns**, **architectural patterns**, 
 **Location:** `backend/processSubmission/processSubmission.go`
 
 ### What It Does
-Defines a family of algorithms (one per programming language), encapsulates each one, and makes them interchangeable. The `SubmissionService` delegates compilation/preparation to whichever strategy is registered for the requested language.
+Defines a **family of interchangeable algorithms** (one per programming language) and lets the system **select the right one at runtime** based on the user's input. The `SubmissionService` does NOT decide how to compile — it delegates that decision to whichever strategy is registered for the requested language.
+
+> **Key Difference from Factory:** Strategy is about **choosing a behavior at runtime**. Factory is about **constructing objects**. Strategy answers *"How should I compile this?"* — Factory answers *"How do I build the service that compiles?"*
 
 ### Interface
 
@@ -51,17 +53,20 @@ type LanguageStrategy interface {
 | `PythonStrategy` | Python | `python3` (interpreted) | `processSubmission.go` |
 | `NodeStrategy` | Node.js | `node` (interpreted) | `processSubmission.go` |
 
-### How It's Used
+### How It's Used (Runtime Selection)
 
 ```go
-strategy, exists := s.registry.Get(req.Language)  // O(1) lookup
-cmd, args, err := strategy.Prepare(ws, req.SourceCode)
+// At runtime, the user sends language = "python"
+// Strategy Pattern SELECTS the right algorithm:
+strategy, exists := s.registry.Get(req.Language)  // O(1) lookup → PythonStrategy
+cmd, args, err := strategy.Prepare(ws, req.SourceCode)  // Runs PythonStrategy.Prepare()
 results := s.runner.RunBatch(cmd, args, ...)
 ```
 
 ### Why
 - **Open/Closed Principle** — Adding a new language (e.g., Rust) means creating a new struct implementing `LanguageStrategy` and registering it. Zero changes to `ProcessSubmission()`.
 - **Eliminates switch/case** — The old approach used a giant switch block; the Strategy Pattern replaces it with polymorphic dispatch.
+- **Runtime polymorphism** — The same `Prepare()` call behaves differently depending on which strategy was selected.
 
 ---
 
@@ -276,7 +281,11 @@ The `judge` package defines pure data structures with no business logic. It serv
 **Location:** `backend/processSubmission/processSubmission.go`, `backend/auth/`
 
 ### What It Does
-Constructor functions create and configure complex objects:
+Factory functions **construct and wire up objects** with their dependencies. They handle the *creation* step — allocating structs, injecting dependencies, and returning ready-to-use instances.
+
+> **Key Difference from Strategy:** Factory is about **building objects at startup**. Strategy is about **selecting behavior at runtime**. Factory answers *"How do I assemble this service?"* — Strategy answers *"Which algorithm should I run?"*
+
+### All Factories
 
 | Factory | Creates | Configures |
 |---------|---------|-----------|
@@ -286,9 +295,34 @@ Constructor functions create and configure complex objects:
 | `NewUserRepository(db)` | `UserRepository` | Injects database connection |
 | `NewAPIKeyAuthMiddleware(svc)` | `APIKeyAuthMiddleware` | Injects API key service |
 
+### How It's Used (Object Construction)
+
+```go
+// At startup — Factory creates the objects:
+registry := NewDefaultRegistry()                           // Factory builds the registry
+runner := &DefaultRunner{}                                  // Factory builds the runner
+storage := &LocalTempStorageAdapter{BaseDir: "/dev/shm"}    // Factory builds storage
+svc := NewSubmissionService(runner, registry, storage)      // Factory wires everything
+
+// Later at runtime — Strategy selects the algorithm:
+strategy, _ := svc.registry.Get("python")                   // ← This is Strategy, not Factory
+strategy.Prepare(ws, sourceCode)                            // ← Strategy executes
+```
+
+### Factory vs Strategy — Side-by-Side
+
+| Aspect | Factory Pattern | Strategy Pattern |
+|--------|----------------|------------------|
+| **Purpose** | Create & wire objects | Select & execute algorithms |
+| **When** | At startup / initialization | At runtime per request |
+| **Question** | *"How do I build this?"* | *"Which one should I run?"* |
+| **Example** | `NewSubmissionService(...)` | `registry.Get("python")` |
+| **Category** | Creational | Behavioral |
+
 ### Why
 - **Dependency Injection** — All dependencies are passed in explicitly. No hidden globals.
-- **Testability** — In tests, you can pass mock implementations.
+- **Testability** — In tests, you can pass mock implementations (e.g., a mock `BatchRunner` into `NewSubmissionService()`).
+- **Single place for wiring** — All construction logic is centralized in `New*()` functions, not scattered across the codebase.
 
 ---
 
