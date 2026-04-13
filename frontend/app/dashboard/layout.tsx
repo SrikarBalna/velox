@@ -1,11 +1,33 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import LogoutButton from '@/components/dashboard/LogoutButton';
+import api from '@/lib/api';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [profile, setProfile] = useState<{name: string, email: string} | null>(null);
+
+  useEffect(() => {
+    // Fetch profile data from backend to hydrate the top-right header
+    api.get('/dashboard')
+      .then(res => {
+        if (res.data) {
+          setProfile({
+            name: res.data.user_name || 'User',
+            email: res.data.user_email || ''
+          });
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch dashboard header data:", err);
+      });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="h-20 border-b border-white/5 bg-surface/50 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-20">
@@ -33,11 +55,10 @@ export default function DashboardLayout({
           
           <Link href="/dashboard/profile" className="flex items-center gap-3 cursor-pointer group">
             <div className="flex flex-col text-right hidden sm:flex">
-                <span className="text-sm font-bold text-white">Admin</span>
-                <span className="text-xs text-white/50">Pro Tier</span>
+                <span className="text-sm font-bold text-white">{profile?.name || '...'}</span>
             </div>
             <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-bold text-white group-hover:border-primary/50 transition-colors shadow-sm overflow-hidden relative">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Avatar" className="w-full h-full object-cover" />
+              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.name || 'User'}`} alt="Avatar" className="w-full h-full object-cover" />
             </div>
           </Link>
           <LogoutButton />

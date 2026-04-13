@@ -75,21 +75,10 @@ body {
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 20px 0 rgba(255, 90, 0, 0.1);
 }
 
-@keyframes ping-glow {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(2); opacity: 0; }
-}
-
-@keyframes slide-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes feed-in {
   from {
     opacity: 0;
     transform: translateY(-10px) scale(0.95);
-    /* For smooth push-down, we animate max-height */
     max-height: 0;
     margin-bottom: 0;
     padding-top: 0;
@@ -99,8 +88,7 @@ body {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
-    max-height: 100px; /* safely above card height */
-    /* the gap/margin is gap-2 between items, handled by parent flex gap, but we can set margin-bottom instead of gap */
+    max-height: 100px; 
   }
 }
 
