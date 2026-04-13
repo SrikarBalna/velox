@@ -20,9 +20,8 @@ A comprehensive catalog of all **design patterns**, **architectural patterns**, 
 | 10 | [Table-Driven Tests](#10-table-driven-tests) | Testing | `processSubmission/*_test.go` |
 | 11 | [Domain Model Pattern](#11-domain-model-pattern) | Architectural | `judge/` |
 | 12 | [Factory Pattern](#12-factory-pattern) | Creational | `NewDefaultRegistry()`, `NewSubmissionService()` |
-| 13 | [CORS Middleware](#13-cors-middleware-pattern) | Infrastructure | `cmd/api/main.go` |
-| 14 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
-| 15 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
+| 13 | [Decorator Pattern](#14-decorator-pattern) | Structural | Middleware wrapping |
+| 14 | [Single Responsibility Principle](#15-single-responsibility-principle-srp) | SOLID | `ResultAggregator`, separated packages |
 
 ---
 
@@ -359,29 +358,7 @@ Constructor functions create and configure complex objects:
 
 ---
 
-## 13. CORS Middleware Pattern
-
-**Category:** Infrastructure  
-**Location:** `backend/cmd/api/main.go`
-
-### What It Does
-Environment-aware CORS middleware that allows all origins in development and restricts to a specific domain in production.
-
-```go
-if env == "" || env == "development" {
-    allowedOrigin = "*"
-} else {
-    allowedOrigin = "https://example.com"
-}
-```
-
-### Why
-- **Security** — Production environments restrict cross-origin requests.
-- **Developer Experience** — Development allows any origin for easy frontend testing.
-
----
-
-## 14. Decorator Pattern
+## 13. Decorator Pattern
 
 **Category:** Structural  
 **Location:** `backend/cmd/api/main.go`, `backend/auth/middleware/`
@@ -399,7 +376,7 @@ Each wrapper adds one responsibility (authentication, CORS, security headers) wh
 
 ---
 
-## 15. Single Responsibility Principle (SRP)
+## 14. Single Responsibility Principle (SRP)
 
 **Category:** SOLID  
 **Location:** Throughout the codebase
