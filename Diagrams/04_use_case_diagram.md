@@ -1,6 +1,6 @@
 # 4. Use Case Diagram
 
-This document identifies all **actors** in the Velox system and the **operations** they perform or participate in.
+This document identifies the primary **actor** in the Velox system and all **operations** they can perform.
 
 ---
 
@@ -8,172 +8,221 @@ This document identifies all **actors** in the Velox system and the **operations
 
 ```mermaid
 flowchart LR
-    User((👤 User<br/>Developer / Student))
-    Admin((🔧 Admin<br/>DevOps))
-    CI((🤖 CI Pipeline<br/>GitHub Actions))
+    User(("User"))
 
     subgraph "Velox System"
         direction TB
-        subgraph "API Server"
-            UC1([Submit Code])
-            UC2([Check Submission Status])
-            UC3([Validate Request])
-            UC4([Generate Submission ID])
+
+        subgraph "Authentication"
+            UC1([Sign Up])
+            UC2([Login])
+            UC3([Logout])
         end
 
-        subgraph "Worker"
-            UC5([Compile Source Code])
-            UC6([Execute Test Cases])
-            UC7([Measure Time & Memory])
-            UC8([Enforce Resource Limits])
-            UC9([Aggregate Results])
-            UC10([Clean Up Temp Files])
+        subgraph "API Key Management"
+            UC4([Create API Key])
+            UC5([List API Keys])
+            UC6([Update API Key])
+            UC7([Delete API Key])
         end
 
-        subgraph "Redis"
-            UC11([Queue Submission])
-            UC12([Store Results])
-            UC13([Retrieve Results])
+        subgraph "Code Submission"
+            UC8([Submit Code])
+            UC9([Check Submission Status])
         end
 
-        subgraph "Frontend"
-            UC14([View Landing Page])
-            UC15([Read Documentation])
-            UC16([Sign In])
-            UC17([Sign Up])
-            UC18([Search Documentation])
-            UC23([Manage API Keys])
-            UC24([View API Stats])
+        subgraph "Logs & Monitoring"
+            UC10([View API Key Stats])
+            UC11([View Dashboard])
+            UC12([Health Check])
         end
 
-        subgraph "Infrastructure"
-            UC19([Build Docker Images])
-            UC20([Run Load Tests])
-            UC21([Deploy Stack])
-            UC22([Run CI Tests])
+        subgraph "Documentation"
+            UC13([View Docs])
         end
     end
 
-    User -->|"POST /submit"| UC1
-    User -->|"GET /status"| UC2
-    User --> UC14
-    User --> UC15
-    User --> UC16
-    User --> UC17
-    User --> UC18
-    User --> UC23
-    User --> UC24
-
-    UC1 --> UC3
-    UC1 --> UC4
-    UC1 --> UC11
-
-    UC2 --> UC13
-
-    UC11 -.->|"async"| UC5
-    UC5 --> UC6
-    UC6 --> UC7
-    UC6 --> UC8
-    UC6 --> UC9
-    UC9 --> UC12
-    UC5 --> UC10
-    UC6 --> UC10
-
-    Admin --> UC19
-    Admin --> UC20
-    Admin --> UC21
-
-    CI --> UC22
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    User --> UC6
+    User --> UC7
+    User --> UC8
+    User --> UC9
+    User --> UC10
+    User --> UC11
+    User --> UC12
+    User --> UC13
 
     style User fill:#ff5a00,color:#fff,stroke:#333
-    style Admin fill:#2563eb,color:#fff,stroke:#333
-    style CI fill:#16a34a,color:#fff,stroke:#333
+    style UC1 fill:#e0f2fe,stroke:#0284c7
+    style UC2 fill:#e0f2fe,stroke:#0284c7
+    style UC3 fill:#e0f2fe,stroke:#0284c7
+    style UC4 fill:#fef3c7,stroke:#d97706
+    style UC5 fill:#fef3c7,stroke:#d97706
+    style UC6 fill:#fef3c7,stroke:#d97706
+    style UC7 fill:#fef3c7,stroke:#d97706
+    style UC8 fill:#dcfce7,stroke:#16a34a
+    style UC9 fill:#dcfce7,stroke:#16a34a
+    style UC10 fill:#fce7f3,stroke:#db2777
+    style UC11 fill:#fce7f3,stroke:#db2777
+    style UC12 fill:#fce7f3,stroke:#db2777
+    style UC13 fill:#f3e8ff,stroke:#9333ea
 ```
 
 ---
 
-## 4.2 Detailed Use Case Descriptions
+## 4.2 Internal System Flow (Include / Extend)
 
-### UC1: Submit Code
-| Field | Value |
-|-------|-------|
-| **Actor** | User |
-| **Trigger** | `POST /submit` with JSON body |
-| **Preconditions** | Request body contains `language`, `source_code`, and at least one `test_case` |
-| **Flow** | 1. API validates `TimeLimitMs ≤ 5000` and `MemoryLimitKb ≤ 512000` <br/> 2. Generate UUID via `uuid.New()` <br/> 3. Serialize request to JSON <br/> 4. `LPUSH` to Redis `"submissions"` queue <br/> 5. Return `202 Accepted` with `submission_id` |
-| **Postconditions** | Submission is queued for processing |
-| **Error Cases** | Invalid JSON → 400, Limits too high → 400, Redis push failure → 500 |
+When the User triggers **Submit Code** or **Check Status**, the system internally performs the following operations:
 
-### UC2: Check Submission Status
-| Field | Value |
-|-------|-------|
-| **Actor** | User |
-| **Trigger** | `GET /status?submission_id=<id>` |
-| **Preconditions** | A submission with the given ID was previously submitted |
-| **Flow** | 1. Extract `submission_id` from query params <br/> 2. `BRPOP "results:<id>"` with 1s timeout <br/> 3a. If found → return the full response JSON <br/> 3b. If timeout → return `{"status": "pending"}` |
-| **Postconditions** | Client receives result or pending status |
-| **Error Cases** | Missing `submission_id` → 400 |
+```mermaid
+flowchart TB
+    UC8([Submit Code]) -->|"«include»"| V1([Validate Request])
+    UC8 -->|"«include»"| V2([Generate Submission ID])
+    UC8 -->|"«include»"| V3([Queue to Redis])
+    UC8 -->|"«include»"| V4([Log API Request])
 
-### UC3: Validate Request
-| Field | Value |
-|-------|-------|
-| **Actor** | API Server (internal) |
-| **Checks** | HTTP method is POST, JSON is valid, `TimeLimitMs ≤ 5000`, `MemoryLimitKb ≤ 512000` |
+    V3 -.->|"async"| W1([Compile Source Code])
+    W1 --> W2([Execute Test Cases])
+    W2 --> W3([Measure Time & Memory])
+    W2 --> W4([Enforce Resource Limits])
+    W2 --> W5([Aggregate Results])
+    W5 --> W6([Store Results in Redis])
+    W1 --> W7([Clean Up Temp Files])
+    W2 --> W7
 
-### UC5: Compile Source Code
-| Field | Value |
-|-------|-------|
-| **Actor** | Worker (internal) |
-| **Supported Languages** | C (gcc), C++ (g++), Java (javac), TypeScript (tsc), C# (dotnet build) |
-| **Interpreted Languages** | Python, Node.js — no compilation, file is written to temp dir and executed directly |
-| **Error Output** | Compiler stderr is captured and returned as `CompileError` field |
+    UC9([Check Status]) -->|"«include»"| R1([Poll Redis for Result])
+    R1 -->|"found"| R2([Return Full Result])
+    R1 -->|"timeout"| R3([Return Pending Status])
+    UC9 -->|"«include»"| V4
 
-### UC6: Execute Test Cases
-| Field | Value |
-|-------|-------|
-| **Actor** | Worker → RunBatch (internal) |
-| **Flow** | For each test case: <br/> 1. Create context with timeout <br/> 2. Run binary/script with `stdin` piped from test input <br/> 3. Capture `stdout`, `stderr` <br/> 4. Measure CPU time and peak memory <br/> 5. Compare actual output to expected output |
-| **Possible Statuses** | `Accepted`, `Wrong Answer`, `Runtime Error`, `Time Limit Exceeded`, `Memory Limit Exceeded` |
-
-### UC8: Enforce Resource Limits
-| Field | Value |
-|-------|-------|
-| **Actor** | RunBatch (internal) |
-| **Time Limit** | Enforced via `context.WithTimeout`. Default: 3000ms. Max: 5000ms. |
-| **Memory Limit** | Measured via `syscall.Rusage.Maxrss`. Default: 256MB. Max: 512MB. Platform-aware (macOS divides by 1024). |
-
-### UC20: Run Load Tests
-| Field | Value |
-|-------|-------|
-| **Actor** | Admin / Developer |
-| **Tool** | `tests/load_test_cmd.go` |
-| **Behavior** | Sends 20 concurrent submissions per language, polls for results, and prints percentile metrics (P50, P90, P95, P99). |
-
-### UC23: Manage API Keys
-| Field | Value |
-|-------|-------|
-| **Actor** | User |
-| **Trigger** | POST/GET/PATCH/DELETE `/auth/api-keys` |
-| **Description** | Generate, list, rename, and revoke API keys used for authentication. |
-
-### UC24: View API Stats
-| Field | Value |
-|-------|-------|
-| **Actor** | User |
-| **Trigger** | GET `/auth/api-keys/stats` |
-| **Description** | View usage metrics (Total, RPM, RPD, Success Rate) for an API key. |
-
-### UC22: Run CI Tests
-| Field | Value |
-|-------|-------|
-| **Actor** | GitHub Actions CI pipeline |
-| **Trigger** | Push to `main` or Pull Request to `main` |
-| **Strategy** | 3-job pipeline: (1) Matrix unit tests per language (C, CPP, Java, Node, Python, TS, CSharp), (2) Build load test binary from tests/load/, (3) Build performance test binary from tests/performance/ |
-| **Command** | `go test -v -race ./processSubmission -run TestProcessSubmission_<Language>$` |
+    style UC8 fill:#dcfce7,stroke:#16a34a
+    style UC9 fill:#dcfce7,stroke:#16a34a
+    style V1 fill:#f1f5f9,stroke:#64748b
+    style V2 fill:#f1f5f9,stroke:#64748b
+    style V3 fill:#f1f5f9,stroke:#64748b
+    style V4 fill:#f1f5f9,stroke:#64748b
+    style W1 fill:#fef9c3,stroke:#ca8a04
+    style W2 fill:#fef9c3,stroke:#ca8a04
+    style W3 fill:#fef9c3,stroke:#ca8a04
+    style W4 fill:#fef9c3,stroke:#ca8a04
+    style W5 fill:#fef9c3,stroke:#ca8a04
+    style W6 fill:#fef9c3,stroke:#ca8a04
+    style W7 fill:#fef9c3,stroke:#ca8a04
+    style R1 fill:#f1f5f9,stroke:#64748b
+    style R2 fill:#f1f5f9,stroke:#64748b
+    style R3 fill:#f1f5f9,stroke:#64748b
+```
 
 ---
 
-## 4.3 Supported Languages Matrix
+## 4.3 Detailed Use Case Descriptions
+
+### UC1: Sign Up
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `POST /auth/signup` with JSON body |
+| **Preconditions** | None |
+| **Flow** | 1. User sends `name`, `email`, `password` <br/> 2. Server validates input (email format, password ≥ 8 chars) <br/> 3. Hash password and store in PostgreSQL <br/> 4. Return `201 Created` with user details |
+| **Error Cases** | Missing name → 400, Email taken → 400, Invalid email → 400, Password too short → 400 |
+
+### UC2: Login
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `POST /auth/login` with JSON body |
+| **Flow** | 1. User sends `email` and `password` <br/> 2. Server verifies credentials <br/> 3. Generate JWT token <br/> 4. Return `200 OK` with token |
+| **Error Cases** | Invalid credentials → 401 |
+
+### UC3: Logout
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `POST /auth/logout` |
+| **Flow** | 1. Stateless JWT — server responds with success <br/> 2. Client discards token locally |
+
+### UC4: Create API Key
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `POST /auth/api-keys` (requires session auth) |
+| **Flow** | 1. User provides `name`, optional `scopes` and `expires_at` <br/> 2. Default scopes: `["submit", "status"]` <br/> 3. Server generates key, stores hash in DB <br/> 4. Returns full key (shown only once), ID, and display hint |
+| **Error Cases** | Missing name → 400, Unauthorized → 401 |
+
+### UC5: List API Keys
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `GET /auth/api-keys` (requires session auth) |
+| **Flow** | Returns all API keys belonging to the authenticated user |
+
+### UC6: Update API Key
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `PATCH /auth/api-keys?id=<uuid>` (requires session auth) |
+| **Flow** | Renames an existing API key |
+
+### UC7: Delete API Key
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `DELETE /auth/api-keys?id=<uuid>` (requires session auth) |
+| **Flow** | Permanently revokes and deletes an API key |
+
+### UC8: Submit Code
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `POST /submit` with JSON body (requires API key auth) |
+| **Preconditions** | Request body contains `language`, `source_code`, and at least one `test_case` |
+| **Flow** | 1. API validates `TimeLimitMs ≤ 5000` and `MemoryLimitKb ≤ 512000` <br/> 2. Generate UUID via `uuid.New()` <br/> 3. Serialize request to JSON <br/> 4. `LPUSH` to Redis `"submissions"` queue <br/> 5. Log API request <br/> 6. Return `202 Accepted` with `submission_id` |
+| **Postconditions** | Submission is queued for processing |
+| **Error Cases** | Invalid JSON → 400, Limits too high → 400, Redis push failure → 500 |
+
+### UC9: Check Submission Status
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `GET /status?submission_id=<id>` (requires API key auth) |
+| **Flow** | 1. Extract `submission_id` from query params <br/> 2. `BRPOP "results:<id>"` with 1s timeout <br/> 3a. If found → return the full response JSON and update log <br/> 3b. If timeout → return `{"status": "pending"}` |
+| **Error Cases** | Missing `submission_id` → 400 |
+
+### UC10: View API Key Stats
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `GET /auth/api-keys/stats?id=<uuid>` (requires session auth) |
+| **Flow** | Returns usage metrics (Total requests, RPM, RPD, Success Rate) for a specific API key |
+
+### UC11: View Dashboard
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `GET /dashboard` (requires session auth) |
+| **Flow** | Returns user-specific profile and activity data |
+
+### UC12: Health Check
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `GET /health` |
+| **Flow** | Returns `{"status": "healthy"}` if API server is running |
+
+### UC13: View Swagger Docs
+| Field | Value |
+|-------|-------|
+| **Actor** | User |
+| **Trigger** | `GET /swagger/` (development mode only) |
+| **Flow** | Serves the interactive Swagger UI for API exploration |
+
+---
+
+## 4.4 Supported Languages Matrix
 
 The system supports 7 programming languages. Each language follows a specific execution pipeline:
 
