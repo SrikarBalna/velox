@@ -2,56 +2,58 @@
 
 Velox is a high-performance, containerized code execution engine (Online Judge) built with Go and Docker. It allows you to submit code in various languages, execute it against multiple test cases, and receive detailed resource usage (time and memory) along with execution status.
 
-## 📁 Project Structure
+## Project Structure
 
 The project is split into two main services: an **API Server** and a **Worker**.
 
-### `backend/`
+### backend/
 
 Core Go application logic.
 
-- **`cmd/`**
-  - **`api/`**: Entry point for the HTTP server. Handles `/submit` and `/status` endpoints.
-  - **`worker/`**: Entry point for the background worker. Continuously polls Redis for new submissions.
-- **`judge/`**: Defines the data models (`judje.go`) for requests and responses used across the system.
-- **`processSubmission/`**: The language orchestrator. Handles compilation (for C, C#, C++, Java, TS) and script preparation (for Python, Node).
-- **`runBatch/`**: The execution engine. Runs binaries/scripts in a controlled environment, pipes input, and captures results, Time (ms), and Memory (KB).
-- **`shared/redis/`**: Basic Redis wrapper for pushing/popping submissions and results.
-- **`docs/`**: Automatically generated Swagger (OpenAPI 3.0) documentation.
+- **cmd/**
+  - **api/**: Entry point for the HTTP server. Handles `/submit` and `/status` endpoints, protected by API Key authentication.
+  - **worker/**: Entry point for the background worker. Continuously polls Redis for new submissions to process.
+- **auth/**: Authentication module handling API Keys, Users, and background API usage metrics.
+- **judge/**: Defines the data models (`judge.go`) for requests and responses used across the system.
+- **processSubmission/**: The language orchestrator utilizing the Strategy Pattern. Handles compilation and script preparation for all supported languages.
+- **runBatch/**: The execution engine. Runs binaries/scripts in a controlled environment, pipes input, and captures results, Time (ms), and Memory (KB).
+- **shared/redis/**: Basic Redis wrapper for pushing/popping submissions and results.
+- **docs/**: Automatically generated Swagger (OpenAPI 3.0) documentation.
 
 ---
 
-## 📖 API Documentation
+## API Documentation
 
 The project uses Swagger (OpenAPI 3.0) for API documentation.
 
-### 🔍 View Documentation
+### View Documentation
 When the server is running in development mode (`GO_ENV=development`), you can access the interactive Swagger UI at:
 - **[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)**
 
-### 🛠 Generate Documentation
+### Generate Documentation
 If you add new endpoints or update annotations, regenerate the documentation using:
 ```bash
 cd backend
 go run github.com/swaggo/swag/cmd/swag init -g cmd/api/main.go
 ```
 
-### `build/`
+### build/
 
 Contains infrastructure configuration.
 
-- **`Dockerfile.api`**: Minimal Go runtime for the API service.
-- **`Dockerfile.worker`**: Full-featured image containing compilers (gcc, g++, javac) and runtimes (python, node, openjdk) required for judging.
+- **Dockerfile.api**: Minimal Go runtime for the API service.
+- **Dockerfile.worker**: Full-featured image containing compilers (gcc, g++, javac) and runtimes (python, node, openjdk) required for judging.
 
-### `docker-compose.yml`
+### docker-compose.yml
 
-Orchestrates the `api`, `worker`, and `redis` services into a single local environment.
+Orchestrates the `api`, `worker`, `postgres`, and `redis` services into a single local environment.
 
 ---
 
-## 🛠 Technology Stack
+## Technology Stack
 
 - **Language**: Go (Golang)
+- **Database**: PostgreSQL
 - **Queue/Store**: Redis
 - **Containerization**: Docker & Docker Compose
 - **Supported Languages**:
@@ -65,7 +67,7 @@ Orchestrates the `api`, `worker`, and `redis` services into a single local envir
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 Ensure you have **Docker** and **Docker Compose** installed.
 
@@ -87,6 +89,7 @@ Ensure you have **Docker** and **Docker Compose** installed.
    ```bash
    curl -X POST http://localhost:8080/submit \
      -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <YOUR_API_KEY>" \
      -d '{
        "language": "cpp",
        "source_code": "#include <iostream>\nusing namespace std;\nint main() { int a, b; while (cin >> a >> b) cout << a + b << endl; return 0; }",
@@ -96,27 +99,27 @@ Ensure you have **Docker** and **Docker Compose** installed.
 
 4. **Check status:**
    ```bash
-   curl http://localhost:8080/status?submission_id=<ID_FROM_PREVIOUS_STEP>
+   curl -X GET "http://localhost:8080/status?submission_id=<ID_FROM_PREVIOUS_STEP>" \
+     -H "Authorization: Bearer <YOUR_API_KEY>"
    ```
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! To help you get started:
 
 ### Adding a New Language Support
 
-1. **Update `backend/judge/judje.go`**: Add the language string to comments if needed.
-2. **Update `backend/processSubmission/ProcessSubmission.go`**:
-   - Add a new `case` in the `switch` block.
-   - Implement a compiler/preparer function (similar to `CompileInMemoryCPP`).
-3. **Update `build/Dockerfile.worker`**: Ensure the necessary compiler or runtime is installed in the worker image.
+1. **Create Strategy**: Under `backend/processSubmission/`, create a new file (e.g., `ruby_strategy.go`) implementing the `LanguageStrategy` interface.
+2. **Register Strategy**: Update `NewDefaultRegistry()` in the `processSubmission` module to register your new strategy with its corresponding language key.
+3. **Update Dockerfile**: Update `build/Dockerfile.worker` to ensure the necessary compiler or runtime is installed in the worker image.
+4. **Add Tests**: Add unit tests for your strategy execution path.
 
 ### Development Workflow
 
 - **Code Style**: We follow standard Go formatting (`go fmt`).
-- **Testing**: Use the provided `curl` samples to verify your changes.
+- **Testing**: Use the provided `curl` samples and test scripts to verify your changes.
 - **Watch Mode**: You can use `docker compose watch` (if supported by your version) to automatically rebuild services when files in `backend/` change.
 
 ### Steps to Contribute
