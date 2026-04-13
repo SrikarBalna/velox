@@ -13,8 +13,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Velox | High-Performance Code Execution",
+  title: "Velox Engine",
   description: "A distributed, high-performance Online Code Judger and Remote Code Execution Engine built for developers.",
+  applicationName: "Velox",
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  }
 };
 
 import { SearchModal } from "@/components/ui/SearchModal";
